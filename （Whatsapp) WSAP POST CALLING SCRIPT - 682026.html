@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>WSAP Post Event Calling Script — 聊天式预览</title>
+<style>
+  :root{
+    --navy:#1d3f72;
+    --navy-dark:#16305a;
+    --blue-soft:#eaf2fc;
+    --gray-bg:#eef1f5;
+    --border:#e3e7ee;
+    --text:#1f2430;
+    --sub:#6b7386;
+    --green:#1f9d55;
+    --amber:#b9860a;
+    --red:#c23b3b;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html{ -webkit-text-size-adjust:100%; touch-action:manipulation; }
+  body{
+    margin:0;
+    padding:30px 14px 60px;
+    background:#dde3ec;
+    font-family:-apple-system,"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+    color:var(--text);
+    display:flex;
+    justify-content:center;
+    touch-action:manipulation;
+  }
+  .app{
+    width:100%;
+    max-width:420px;
+    background:#fff;
+    border-radius:18px;
+    overflow:hidden;
+    box-shadow:0 20px 50px rgba(20,30,60,.18);
+    display:flex;
+    flex-direction:column;
+  }
+  @media (min-width:700px){
+    body{ padding:40px 14px 70px; }
+    .app{ max-width:480px; }
+    .chat-area{ max-height:560px; }
+  }
+  .header{
+    background:linear-gradient(135deg,var(--navy),var(--navy-dark));
+    color:#fff;
+    padding:18px 20px 14px;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:10px;
+  }
+  .header h1{margin:0;font-size:17px;line-height:1.3;font-weight:800;}
+  .header .h1-sub{display:block;font-size:11px;font-weight:600;color:#c9d6ea;margin-top:3px;}
+  .header .tag{text-align:right;font-size:11px;color:#c9d6ea;line-height:1.5;white-space:nowrap;padding-top:2px;}
+
+  .track-bar{background:var(--gray-bg);padding:10px 20px 12px;}
+  .track-label{font-size:10.5px;font-weight:800;color:#7d8494;letter-spacing:.4px;text-transform:uppercase;margin-bottom:7px;}
+  .track-tabs{display:flex;gap:6px;}
+  .track-tab{flex:1;background:transparent;border:none;border-radius:10px;padding:11px 6px;min-height:44px;font-size:11.5px;font-weight:700;line-height:1.25;color:#8990a1;cursor:pointer;text-align:center;}
+  .track-tab.active{background:#fff;color:var(--navy);box-shadow:0 2px 6px rgba(20,30,60,.12);}
+  .track-tab:active{background:#e4e9f1;}
+
+  .chat-area{
+    padding:16px 16px 10px;
+    max-height:480px;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    background:#f4f6fa;
+    scroll-behavior:smooth;
+  }
+  .bubble-row{display:flex;flex-direction:column;}
+  .bubble{
+    max-width:84%;
+    padding:10px 14px;
+    border-radius:14px;
+    font-size:13.5px;
+    line-height:1.55;
+  }
+  .bubble.bd{
+    align-self:flex-end;
+    background:var(--navy);
+    color:#fff;
+    border-bottom-right-radius:4px;
+  }
+  .bubble.bd b{color:#ffe9a8;}
+  .bubble.client{
+    align-self:flex-start;
+    background:#fff;
+    border:1px solid var(--border);
+    color:#242a38;
+    font-weight:700;
+    border-bottom-left-radius:4px;
+  }
+  .bubble.system{
+    align-self:center;
+    background:#e4ecf9;
+    color:var(--navy);
+    font-size:11.5px;
+    font-weight:700;
+    padding:6px 14px;
+    border-radius:20px;
+    text-align:center;
+  }
+  .bubble.terminal{
+    align-self:center;
+    text-align:center;
+    background:#fff;
+    border:1.5px solid var(--border);
+    border-radius:14px;
+    padding:16px 18px;
+    max-width:90%;
+  }
+  .bubble.terminal .t-icon{font-size:28px;margin-bottom:4px;}
+  .bubble.terminal .t-title{font-weight:800;font-size:14.5px;margin-bottom:4px;}
+  .bubble.terminal .t-note{font-size:12px;color:var(--sub);line-height:1.5;}
+
+  .composer{
+    border-top:1px solid var(--border);
+    padding:12px 16px 6px;
+    background:#fff;
+  }
+  .role-label{font-size:11px;color:var(--sub);font-weight:700;margin-bottom:8px;}
+  .chip-row{display:flex;flex-wrap:wrap;gap:8px;}
+  .chip{
+    background:#fff;
+    border:1.5px solid var(--border);
+    border-radius:20px;
+    padding:11px 16px;
+    min-height:44px;
+    display:inline-flex;
+    align-items:center;
+    font-size:12.5px;
+    font-weight:700;
+    color:#242a38;
+    cursor:pointer;
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .chip:hover{border-color:var(--navy);background:#f6f9fd;}
+  .chip:active{border-color:var(--navy);background:#eef3fb;}
+  .chip.accept{border-color:#bfe3cc;}
+  .chip.accept:hover{border-color:var(--green);}
+  .chip.accept:active{border-color:var(--green);background:#f2fbf5;}
+  .chip.role{background:var(--blue-soft);border-color:#cfe0f5;}
+
+  .toolbar-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:10px 16px 4px;
+  }
+  .faq-btn, .restart-btn, .back-btn{
+    font-size:11.5px;
+    font-weight:700;
+    color:#8990a1;
+    cursor:pointer;
+    background:none;
+    border:none;
+    padding:10px 6px;
+    min-height:36px;
+  }
+  .faq-btn{color:#b9860a;}
+  .faq-btn:hover, .restart-btn:hover, .back-btn:hover{color:var(--navy);}
+  .faq-btn:active, .restart-btn:active, .back-btn:active{color:var(--navy);}
+
+  .faq-panel{
+    padding:0 16px 12px;
+    display:none;
+  }
+  .faq-panel.open{display:block;}
+  .faq-item{
+    background:#fffaf0;
+    border:1px solid #f3e3bd;
+    border-radius:10px;
+    padding:9px 11px;
+    margin-top:6px;
+    font-size:12.5px;
+    line-height:1.55;
+  }
+  .faq-item .q{font-weight:800;color:#5a4200;margin-bottom:3px;}
+  .faq-item .a{color:#4a4636;}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="header">
+    <h1>WSAP：CASH Flow Management<span class="h1-sub">*WSAP Post Event Calling Script（聊天式预览）</span></h1>
+    <div class="tag">分享会学员<br>邀约面谈流程</div>
+  </div>
+
+  <div class="track-bar">
+    <div class="track-label">选择内容 / Track</div>
+    <div class="track-tabs" id="trackTabs"></div>
+  </div>
+
+  <div class="chat-area" id="chatArea"></div>
+
+  <div class="composer">
+    <div id="roleLabel" class="role-label" style="display:none;">请问你是公司的老板还是Accountant呢？</div>
+    <div class="chip-row" id="chipRow"></div>
+  </div>
+
+  <div class="toolbar-row">
+    <button class="back-btn" id="backBtn" style="display:none;" onclick="goBack()">← 上一题</button>
+    <button class="faq-btn" id="faqBtn" style="display:none;" onclick="toggleFaq()">⚡ 快速问答</button>
+    <button class="restart-btn" onclick="restart()">↺ 重新开始</button>
+  </div>
+
+  <div class="faq-panel" id="faqPanel"></div>
+</div>
+
+<script>
+/* ===================== CASH FLOW TRACK ===================== */
+const cashflowNodes = {
+  L1:{ step:1, section:"L1 · 开场破冰",
+    script:`xx你好，我是<b>[您的名字]</b> from YYC。请问你方便讲电话吗？（只需要5分钟而已）`,
+    responses:[
+      {label:"可以 / 什么事 / 做么咧", next:"L2"},
+      {label:"不方便", handling:"没事，我等下<b>[XX点]</b>打回你，可以吗？", next:"CALLBACK"},
+      {label:"你哪里拿到我号码的？", handling:"是因为你有报名参加DATIN SHIN的【现金流】分享会，所以才联系你的哦", next:"L2"},
+      {label:"没有接 / 挂断", next:"WHATSAPP_FOLLOWUP"}
+    ]
+  },
+  L2:{ step:2, section:"L2 · 确认出席分享会",
+    script:`谢谢你昨天有参加我DATIN SHIN的【现金流】分享会，请问你昨天有上完吗？`,
+    responses:[
+      {label:"有，上到大概3点多4点 / 上完", next:"CT"},
+      {label:"有，但是进了一下而已", handling:"还好还好，至少有来看一下！", next:"CT"},
+      {label:"没上完 / 上到一半 / 迟进去", handling:"啊，你昨天逃课啊？哈哈哈哈（<b>语气一定要放软、降低</b>）", next:"CT"},
+      {label:"没有参加到（追问为什么）", handling:"哦是这样啊，那方便问一下是什么原因没参加到呢？没关系的。", next:"L4_NOSHOW"}
+    ]
+  },
+  CT:{ step:3, section:"公司年资",
+    script:`那公司做了多久了？（聆听；写下）`,
+    responses:[
+      {label:"多过30年", handling:"是第一代还是第二代？（聆听）", next:"CT_REV"},
+      {label:"愿意大概讲而已", next:"CT_REV"},
+      {label:"不愿意讲 / 不是老板", next:"CT_REV"}
+    ]
+  },
+  CT_REV:{ step:4, section:"生意额 / Revenue",
+    script:`那生意额/Revenue大概是多少呢？（聆听；写下）`,
+    responses:[ {label:"记录，继续", next:"L3"} ]
+  },
+  L3:{ step:5, section:"L3 · 了解公司行业",
+    script:`可以了解一下你的公司是做什么生意的？（聆听，如果没有说才追问）请问是做：`,
+    responses:[
+      {label:"Manufacturing", next:"L4"},
+      {label:"Trading贸易 / Wholesales批发 / Retails零售店", next:"L4"},
+      {label:"F&B 餐饮业", next:"L4"},
+      {label:"Construction建筑 / Developer地产开发商", next:"L4"},
+      {label:"还是什么呢？ / 不愿意说", handling:"没事没事，大概了解就好。", next:"L4"}
+    ]
+  },
+  L4:{ step:6, section:"L4 · 报名动机",
+    script:`那你报名我们的分享会 有得到 / 找到你要的答案吗？`,
+    responses:[
+      {label:"有说出诉求 / 愿意分享", next:"L5"},
+      {label:"只是想要上课而已", next:"L5"},
+      {label:"我不是老板", handling:"那你负责什么？", next:"L5"}
+    ]
+  },
+  L5:{ step:7, section:"L5 · 1–10分打分",
+    script:`那老板，如果需要你打分，1分到10分，你会打多少分呢？`,
+    responses:[
+      {label:"Rate ＞ 6", next:"L6"},
+      {label:"Rate ≤ 6", handling:"哦老板，那我想请教一下，是哪里让你觉得还可以更好的？其实你比较想要直接解决什么问题？还是你会需要我们直接服务你呢？", next:"L6"}
+    ]
+  },
+  L6:{ step:8, section:"L6 · 假设性铺垫（现金流需求）", needsRole:true,
+    variants:{
+      boss:{ script:`谢谢你啊老板！其实你会上我们「现金流」的课程，我相信你也想要让公司可以更多的资金去周转的。对吗？也许是expansion，也许开始感觉现金有点紧张，或许你想要请人，请人才也需要用到「钱」的啊 对吗？`,
+        responses:[
+          {label:"认同其中一个假设", next:"L7"},
+          {label:"都不是，现金还好", handling:"没事老板，就算暂时不需要，但我们的工具能帮你把现有的现金流进步的更好，不管有没有扩张计划，我相信老板你也想要公司有更多的cash在手。现金流是需要设计的哦，哪怕银行角度还是投资者的角度都很看重的哦。", next:"L7"}
+        ]
+      },
+      accountant:{ script:`谢谢你啊[Accountant Name]！其实你会上我们「现金流」的课程，我相信你也想要让公司可以更多的资金去周转的。对吗？也许是expansion，也许开始感觉现金有点紧张，或许你想要请人，请人才也需要用到「钱」的啊 对吗？`,
+        responses:[
+          {label:"认同其中一个假设", next:"L7"},
+          {label:"都不是，现金还好", handling:"哇，公司的现金流很强哦，都是你在管理吗？（聆听）其实就算暂时不需要，但我们的工具能帮你把现有的现金流进步的更好，我相信你的老板也想要公司有更多的cash在手，因为「现金流」是需要设计的哦，哪怕是银行角度还是投资者的角度都很看重的哦。", next:"L7"}
+        ]
+      }
+    }
+  },
+  L7:{ step:9, section:"L7 · CCC / Working Capital", needsRole:true,
+    variants:{
+      boss:{ script:`那老板，昨天有算到自己的CCC和working capital吗？那你满意吗？哈哈哈` },
+      accountant:{ script:`那昨天有帮公司算到公司的CCC和working capital吗？那你觉得满意吗？哈哈哈` }
+    },
+    responses:[
+      {label:"有算，但不懂是对的吗 / 大概大概吧", next:"L8"},
+      {label:"没有算到 / 不会算 / 没有数据", handling:"没关系，那更加需要我们帮你算清楚。", next:"L8"},
+      {label:"满意啊 / 或没直接回答", handling:"满意是好事，那如果可以让这个数字变得更好，你会想知道怎么做到的吗？", next:"L8"}
+    ]
+  },
+  L8:{ step:10, section:"L8 · 约见 + 索取Audited Report",
+    script:`那我可以帮你！我可以带你再仔细的算公司的「CCC和working capital」，需要你的audited report和management account而已。这次的consultation session是complimentary/免费的，会在我们的公司Pudu跟我的manager/consultant一起帮你analyse。在这个/下个星期<b>[X] [X点]</b>到我们公司Pudu见，我需要你的audited report/management account哦。最新的是2024/2025的吗？`,
+    responses:[
+      {label:"同意见面", next:"SUCCESS"},
+      {label:"要问伴侣 / 合伙人 / 我考虑一下先", handling:"没问题，那我先帮你留这个时间，如果到时不方便再跟我说。但由于我们的时间有点满，需要你明天confirm哦。", next:"FOLLOWUP"},
+      {label:"觉得有距离，不想跑一趟 / 只想线上", handling:"了解，不过当面会比较准确，你也可以当场直接问到想问的。", next:"FOLLOWUP"},
+      {label:"下星期没空", handling:"没问题，那你方便的时间大概是？", next:"FOLLOWUP"}
+    ]
+  },
+  L4_NOSHOW:{ step:6, section:"L4 · 报名动机（未出席分支）",
+    script:`那你报名我们的分享会是想要解决什么问题？`,
+    responses:[ {label:"钱不够用", next:"L5a"}, {label:"只是想上课而已", next:"L5b"} ]
+  },
+  L5a:{ step:7, section:"L5a · 了解现金压力",
+    script:`（针对钱不够用）其实这个状况多久了？（聆听，写下）方便了解大概公司的「cash reserve」能够顶多少个月呢？`,
+    responses:[
+      {label:"还好啦 3–6个月", next:"L5c"},
+      {label:"不懂咧 / 不清楚", next:"L5c"},
+      {label:"怎样算？", next:"L5c"}
+    ]
+  },
+  L5c:{ step:8, section:"L5c · 邀请下一场分享会",
+    script:`那我这里可以协助你2个东西。第一：我们下一堂「现金流」分享会 是在<b>（日期）（时间）</b>线上Zoom的，你OK吗？`,
+    responses:[
+      {label:"OK / 应该可以", handling:"但是我需要你答应我，你一定要记得参加，我会帮你完成报名，我需要你block你的Calendar哦。", next:"L5C_INVITE_OTHERS"},
+      {label:"不行哦！", handling:"那我再看几时还有哦，把我号码save起来，我是<b>[XXX]</b>，有需要什么随时联络我。", next:"RESCHEDULE_WEBINAR"}
+    ]
+  },
+  L5C_INVITE_OTHERS:{ step:8, section:"邀请其他人",
+    script:`（追问）除了帮你报名，还有谁你也要我邀请他吗？`,
+    responses:[ {label:"记录，继续", next:"MEET_SETUP_NOSHOW"} ]
+  },
+  MEET_SETUP_NOSHOW:{ step:9, section:"安排见面（身份确认）", needsRole:true,
+    variants:{
+      boss:{ script:`第二：你上完了我们的「现金流」课程，我需要你安排见面。`, responses:[{label:"继续", next:"L8a"}] },
+      accountant:{ script:`第二：你上完了我们的「现金流」课程，我需要你安排见面。`, responses:[{label:"继续", next:"L8a"}] }
+    }
+  },
+  L8a:{ step:10, section:"L8a · 确认功课 / 安排见面",
+    script:`当你上完课程了，我会打给你看你有没有做功课先哦！你没有上课那我就安排不了见面的，因为需要你了解「现金流」我见你的时候才更能和你挂钩关于CASH的Consultation。`,
+    responses:[
+      {label:"答应 / 有回应", handling:"那把我号码save起来，我是<b>[XXX]</b>，有需要什么随时联络我。", next:"PENDING_COURSE"},
+      {label:"再看啦 / 不能confirm，要看当时有没有上到课", handling:"那把我号码save起来，我是<b>[XXX]</b>，有需要什么随时联络我。", next:"PENDING_COURSE"}
+    ]
+  },
+  L5b:{ step:7, section:"L5b · 确认真实需求",
+    script:`明白，我相信你的时间也很忙，大概也是想知道怎样能帮公司解决，或者可以怎样再把关好现金流的，对吗？`,
+    responses:[ {label:"认同", next:"L5d"}, {label:"答案不坚定", next:"L5d"} ]
+  },
+  L5d:{ step:8, section:"L5d · 邀请下一场分享会",
+    script:`我们下一堂「现金流」分享会 是在<b>（日期）（时间）</b>线上Zoom的，你OK吗？`,
+    responses:[
+      {label:"OK / 应该可以", handling:"那把我号码save起来，我是<b>[XXX]</b>，有需要什么随时联络我。", next:"L5D_CALENDAR"},
+      {label:"不行哦！", handling:"那我再看几时还有哦，把我号码save起来，我是<b>[XXX]</b>，有需要什么随时联络我。", next:"RESCHEDULE_WEBINAR"}
+    ]
+  },
+  L5D_CALENDAR:{ step:9, section:"确认下场分享会",
+    script:`但是我需要你答应我，你一定要记得参加，我会帮你完成报名，我需要你block你的Calendar哦。`,
+    responses:[ {label:"确认，结束通话", next:"FOLLOWUP_NOSHOW"} ]
+  },
+  SUCCESS:{terminal:true, icon:"✅", color:"var(--green)", title:"已确认见面", note:"挂电话后马上发资料清单 + confirmation email，并把号码存起来。"},
+  FOLLOWUP:{terminal:true, icon:"📅", color:"var(--amber)", title:"已约定稍后跟进", note:"记得设提醒，按约定时间/明天再确认。"},
+  CALLBACK:{terminal:true, icon:"📞", color:"var(--amber)", title:"稍后回拨", note:"按约定时间回拨，可从L2（确认出席分享会）开始。"},
+  RESCHEDULE_WEBINAR:{terminal:true, icon:"📆", color:"var(--amber)", title:"改期邀约下堂分享会", note:"这次时间不行，之后再看下一场适合的时间，重新邀约对方。"},
+  FOLLOWUP_NOSHOW:{terminal:true, icon:"📅", color:"var(--amber)", title:"已邀约下堂分享会，待跟进", note:"记得帮对方完成下堂分享会报名，提醒对方按时出席、block calendar。"},
+  PENDING_COURSE:{terminal:true, icon:"🎓", color:"var(--amber)", title:"待完成课程后安排见面", note:"对方需先完成线上分享会，之后再跟进确认出席状况，才能安排CCC consultation见面。"},
+  WHATSAPP_FOLLOWUP:{terminal:true, icon:"📲", color:"var(--red)", title:"未接通 → 发送WhatsApp", note:"发送Unreached WhatsApp消息，简单说明分享会内容 + 邀请预约时间。"}
+};
+
+const cashflowFaqs = {
+  L1:[
+    {q:"YYC是什么？做什么的？", a:"我们YYC是一家52年的Accounting Firm。做Audit Tax 还有Business Academy的。"},
+    {q:"这通电话要多久？", a:"就5分钟而已，不会耽误你太久。"}
+  ],
+  L2:[
+    {q:"你要卖我东西是吗？", a:"老板，你有需要才买也可以，但最重要要懂你上完课的回馈。"},
+    {q:"有录影 / recording可以看吗？", a:"我们的这个4个小时是没有recording的哦。老板你是不是时常想上课但是一边听一边忙呢？"}
+  ],
+  CT:[ {q:"为什么要问公司做多久、生意额？", a:"因为这个是基本资料想了解你啊，那我才不会回答错你嘛。"} ],
+  L3:[ {q:"我们做好几种生意 / 跨行业呢？", a:"没关系，挑你觉得比重最大的那个说就好。"} ],
+  L4:[ {q:"我报名的是什么课啊？", a:"是我们DATIN SHIN亲自教的「现金流」课程啊，教你怎么算公司的CCC和Working Capital的啊。"} ],
+  L5:[ {q:"一定要打分吗？", a:"肯定！希望越真实越好。我们才懂怎样可以再能帮到你。"} ],
+  L6:[ {q:"怎样才算真正的足够 / 好的现金流？", a:"其实没有说怎样叫足够，但是当你生意额/Revenue在起的时候，反而感觉钱越来越不够的时候咯，或者是公司不要再成长的时候，我相信你肯定要成长的对吗？"} ],
+  L7:[
+    {q:"CCC是什么？", a:"Cash Conversion Cycle，简单说就是你的钱从进货、卖出到收回现金，中间要卡多久。"},
+    {q:"Working capital是什么？", a:"就是公司日常营运需要周转的资金。"}
+  ],
+  L8:[
+    {q:"你要会卖我东西是吗？", a:"老板，你有需要才买也可以。最重要我们这次的见面可以先帮你做Analysis，但你需要opened minded哦。"},
+    {q:"Consultation session大概要 / 有多久？", a:"大概1到2个小时。但我很肯定这个session和有你的data，你一定能带着至少200千的方向回去执行的。"},
+    {q:"地点在哪？", a:"在KL PUDU，我们的总公司。盖了这个电话我会马上发你Confirmation WhatsApp和Checklist给你。"},
+    {q:"需要准备什么？", a:"我们需要你最新的Audited report和Management Account。放心，盖了这个电话我会马上发你Confirmation WhatsApp和Checklist给你。"},
+    {q:"真的免费吗？", a:"因为你有参加我们的这次分享会才有的，平时我们做这样的consultation session是要收费的（2个小时5千块）。所以老板，你来，我肯定这个session你一定能带着至少200千的方向回去执行的，需要你opened minded，我们才能真正帮到你哦。"},
+    {q:"Manager / consultant是谁？", a:"是我们负责帮你分析CCC和working capital的同事，会跟我一起在场。"}
+  ]
+};
+
+/* ===================== M&A / SUCCESSION TRACK ===================== */
+const maNodes = {
+  L1:{ step:1, section:"L1 · 开场破冰",
+    script:`xx你好，我是<b>[您的名字]</b> from YYC。请问你方便讲电话吗？（只需要5分钟而已）`,
+    responses:[
+      {label:"可以 / 什么事 / 做么咧", next:"L2"},
+      {label:"不方便", handling:"没事，我等下<b>[XX点]</b>打回你，可以吗？", next:"CALLBACK"},
+      {label:"你哪里拿到我号码的？", handling:"是因为你有报名参加DATIN SHIN的【传承与买卖M&A】分享会，所以才联系你的哦", next:"L2"},
+      {label:"没有接 / 挂断", next:"WHATSAPP_FOLLOWUP"}
+    ]
+  },
+  L2:{ step:2, section:"L2 · 确认出席分享会",
+    script:`谢谢你昨天有参加我DATIN SHIN的【传承与买卖M&A】分享会，请问你昨天有上完吗？`,
+    responses:[
+      {label:"有，上到大概3点多4点 / 上完", next:"CT"},
+      {label:"有，但是进了一下而已", handling:"还好还好，至少有来看一下！", next:"CT"},
+      {label:"没上完 / 上到一半 / 迟进去", handling:"啊，你昨天逃课啊？哈哈哈哈（<b>语气一定要放软、降低</b>）", next:"CT"},
+      {label:"没有参加到（追问为什么）", handling:"哦是这样啊，那方便问一下是什么原因没参加到呢？没关系的。", next:"CT"}
+    ]
+  },
+  CT:{ step:3, section:"公司年资",
+    script:`那公司做了多久了？（聆听；写下）`,
+    responses:[
+      {label:"多过30年", handling:"是第一代还是第二代？（聆听）", next:"CT_REV"},
+      {label:"愿意大概讲而已", next:"CT_REV"},
+      {label:"不愿意讲 / 不是老板", next:"CT_REV"}
+    ]
+  },
+  CT_REV:{ step:4, section:"生意额 / Revenue",
+    script:`那生意额/Revenue大概是多少呢？（聆听；写下）`,
+    responses:[ {label:"记录，继续", next:"L3"} ]
+  },
+  L3:{ step:5, section:"L3 · 了解公司行业",
+    script:`可以了解一下你的公司是做什么生意的？（聆听，如果没有说才追问）请问是做：`,
+    responses:[
+      {label:"Manufacturing", next:"L4"},
+      {label:"Trading贸易 / Wholesales批发 / Retails零售店", next:"L4"},
+      {label:"F&B 餐饮业", next:"L4"},
+      {label:"Construction建筑 / Developer地产开发商", next:"L4"},
+      {label:"还是什么呢？ / 不愿意说", handling:"没事没事，大概了解就好。", next:"L4"}
+    ]
+  },
+  L4:{ step:6, section:"L4 · 报名动机",
+    script:`那你报名我们这个「传承与买卖M&A」的分享会，主要是想了解什么呢？`,
+    responses:[
+      {label:"想帮公司做传承 / 接班的准备", next:"L5"},
+      {label:"想了解怎样把公司卖出 / 退场", next:"L5"},
+      {label:"还是你有在想怎样把公司的价值Valuation提高", next:"L5"},
+      {label:"只是想多了解一下而已", next:"L5"}
+    ]
+  },
+  L5:{ step:7, section:"L5 · 1–10分打分",
+    script:`那老板，如果需要你打分，1分到10分，你会打多少分呢？`,
+    responses:[
+      {label:"Rate ＞ 6", next:"L6"},
+      {label:"Rate ≤ 6", handling:"哦老板，那我想请教一下，是哪里让你觉得还可以更好的？其实你比较想要直接解决什么问题？还是你会需要我们直接服务你呢？", next:"L6"}
+    ]
+  },
+  L6:{ step:8, section:"L6 · 假设性铺垫", needsRole:true,
+    variants:{
+      boss:{ script:`谢谢你啊老板！其实你会上我们「传承与买卖M&A」的课程，我相信你也想要好好规划公司未来的方向，对吗？也许是想传给下一代，也许是想找适合的时机卖出，也许是想先把公司价值做起来，无论是哪一种，都需要提早规划的哦老板 对吗？`,
+        responses:[
+          {label:"认同其中一个方向", next:"L7"},
+          {label:"都不是，暂时没想这些", handling:"没事老板，就算暂时没想到是要传承/退场，其实越早规划，让公司有价值，那「选择的机会」才会越多。要不然等到真的有机会的时候才想就会太迟了。", next:"L7"}
+        ]
+      },
+      accountant:{ script:`谢谢你啊[Accountant Name]！其实你会上我们「传承与买卖M&A」的课程，我相信你也想要帮助公司好好规划，对吗？也许你的老板也是想传给下一代，也许是想找适合的时机卖出，但是需要先把公司价值做起来哦！你觉得你的老板是怎样的？哈哈哈`,
+        responses:[
+          {label:"大概知道老板是哪个方向（传承 / 卖出 / valuation）", next:"L7"},
+          {label:"不清楚 / 没听老板提过", handling:"没关系，那这个更需要尽早跟老板提起，因为公司的传承/退场规划越早开始，之后能选的余地才会越多，等真的有机会才想就太迟了。", next:"L7"}
+        ]
+      }
+    }
+  },
+  L7:{ step:9, section:"L7 · 公司估值 Valuation", needsRole:true,
+    variants:{
+      boss:{ script:`那老板，有没有算到自己公司的估值/Valuation呢？那你满意吗？哈哈哈` },
+      accountant:{ script:`那有没有帮公司算到估值/Valuation呢？那你觉得满意吗？哈哈哈` }
+    },
+    responses:[
+      {label:"有算，但不懂是对的吗 / 大概大概吧", next:"CASHFLOW_CHECK"},
+      {label:"没有算到 / 不会算 / 没有数据", handling:"没关系，那更加需要我们帮你算清楚。", next:"CASHFLOW_CHECK"},
+      {label:"满意啊 / 或没直接回答", handling:"满意是好事，那如果可以让这个数字变得更好，你会想知道怎么做到的吗？", next:"CASHFLOW_CHECK"}
+    ]
+  },
+  CASHFLOW_CHECK:{ step:10, section:"现金流健康度检查",
+    script:`其实要公司的估值高不但只是看Profits，还有也要看公司的现金流的啊！那请问你对你公司的『现金流』状况了解的吗？你觉得血液循环的好吗？`,
+    responses:[
+      {label:"了解 / 还算清楚", next:"L8"},
+      {label:"不太了解 / 不清楚", handling:"没关系，那更加需要我们帮你一起看清楚，因为估值和现金流是分不开的，一个健康一个才会真的值钱！你会要吗？", next:"L8"},
+      {label:"觉得还好 / 血液循环还不错", handling:"那太好了，不过我们可以再帮你确认一下，看看有没有可以优化的地方，让估值可以更进一步，你会要吗？", next:"L8"}
+    ]
+  },
+  L8:{ step:11, section:"L8 · 约见 + 索取Audited Report",
+    script:`那我可以帮你！我可以带你再仔细的算公司的「估值Valuation」和现金流的健康度，需要你的audited report和management account而已。这次的consultation session是complimentary/免费的，会在我们的公司Pudu跟我的manager/consultant一起帮你analyse。在这个/下个星期<b>[X] [X点]</b>到我们公司Pudu见，我需要你的audited report/management account哦。最新的是2024/2025的吗？`,
+    responses:[
+      {label:"同意见面", next:"SUCCESS"},
+      {label:"要问伴侣 / 合伙人 / 我考虑一下先", handling:"没问题，那我先帮你留这个时间，如果到时不方便再跟我说。但由于我们的时间有点满，需要你明天confirm哦。", next:"FOLLOWUP"},
+      {label:"觉得有距离，不想跑一趟 / 只想线上", handling:"了解，不过当面会比较准确，你也可以当场直接问到想问的。", next:"FOLLOWUP"},
+      {label:"下星期没空", handling:"没问题，那你方便的时间大概是？", next:"FOLLOWUP"}
+    ]
+  },
+  SUCCESS:{terminal:true, icon:"✅", color:"var(--green)", title:"已确认见面", note:"挂电话后马上发资料清单 + confirmation email，并把号码存起来。"},
+  FOLLOWUP:{terminal:true, icon:"📅", color:"var(--amber)", title:"已约定稍后跟进", note:"记得设提醒，按约定时间/明天再确认。"},
+  CALLBACK:{terminal:true, icon:"📞", color:"var(--amber)", title:"稍后回拨", note:"按约定时间回拨，可从L2（确认出席分享会）开始。"},
+  WHATSAPP_FOLLOWUP:{terminal:true, icon:"📲", color:"var(--red)", title:"未接通 → 发送WhatsApp", note:"发送Unreached WhatsApp消息，简单说明分享会内容 + 邀请预约时间。"}
+};
+
+const maFaqs = {
+  L1:[
+    {q:"YYC是什么？做什么的？", a:"我们YYC是一家52年的Accounting Firm，除了Audit Tax，也有专门做企业传承与买卖M&A的顾问服务。"},
+    {q:"这通电话要多久？", a:"就5分钟而已，不会耽误你太久。"}
+  ],
+  L2:[
+    {q:"你要卖我东西是吗？", a:"老板，你有需要才买也可以，但最重要要懂你上完课的回馈。"},
+    {q:"有录影 / recording可以看吗？", a:"我们的这个分享会是没有recording的哦。"}
+  ],
+  CT:[ {q:"为什么要问公司做多久、生意额？", a:"因为这个是基本资料想了解你啊，那我才不会回答错你嘛。"} ],
+  L3:[ {q:"我们做好几种生意 / 跨行业呢？", a:"没关系，挑你觉得比重最大的那个说就好。"} ],
+  L4:[ {q:"我报名的是什么课啊？", a:"是我们DATIN SHIN亲自教的「传承与买卖M&A」课程啊，教你怎样规划接班、退场，还有提高公司估值的方法。"} ],
+  L5:[ {q:"一定要打分吗？", a:"肯定！希望越真实越好，我们才懂怎样可以再帮到你。"} ],
+  L6:[ {q:"怎样才知道公司需不需要做传承规划？", a:"只要公司还在经营、你还在管理，就已经需要开始想这件事了，越早规划，选择越多。"} ],
+  L7:[ {q:"Valuation是什么，怎么算？", a:"简单说就是评估公司现在值多少钱，会看profit、资产、现金流、行业倍数等好几个因素一起算。"} ],
+  CASHFLOW_CHECK:[ {q:"为什么估值还要看现金流？", a:"因为买家/投资者不只看你赚多少，更看你能不能持续产生现金，现金流不稳定，估值会被打折。"} ],
+  L8:[
+    {q:"Consultation session大概要 / 有多久？", a:"大概1到2个小时，会用你的实际数字讲解。"},
+    {q:"地点在哪？", a:"在KL PUDU，我们的总公司。"},
+    {q:"需要准备什么？", a:"我们需要你最新的Audited report和Management Account。"},
+    {q:"真的免费吗？", a:"因为你有参加我们的这次分享会才有的，平时做这样的consultation是要收费的。"}
+  ]
+};
+
+const tracks = {
+  cashflow:{ label:"现金流<br>Follow-up", startNode:"L1", nodes:cashflowNodes, faqs:cashflowFaqs },
+  ma:{ label:"传承与买卖<br>M&A", startNode:"L1", nodes:maNodes, faqs:maFaqs }
+};
+
+/* ===================== CHAT-STYLE STATE ENGINE ===================== */
+let currentTrack = "cashflow";
+let currentNodeId = tracks[currentTrack].startNode;
+let clientRole = null;
+let transcript = []; // {from:'bd'|'client'|'system'|'terminal', text/icon/title/note}
+let history = []; // {currentTrack, currentNodeId, clientRole, transcriptLen}
+
+function getEffectiveNode(id){
+  const node = tracks[currentTrack].nodes[id];
+  if(node.needsRole && clientRole){
+    const variant = node.variants[clientRole];
+    return { ...node, script: variant.script, responses: variant.responses || node.responses };
+  }
+  return node;
+}
+
+function addMsg(from, text){ transcript.push({from, text}); }
+
+function pushHistory(){
+  history.push({ currentTrack, currentNodeId, clientRole, transcriptLen: transcript.length });
+}
+
+function goBack(){
+  if(history.length === 0) return;
+  const prev = history.pop();
+  currentTrack = prev.currentTrack;
+  currentNodeId = prev.currentNodeId;
+  clientRole = prev.clientRole;
+  transcript = transcript.slice(0, prev.transcriptLen);
+  renderAll();
+}
+
+function seedNode(id){
+  const node = tracks[currentTrack].nodes[id];
+  if(node.terminal){
+    transcript.push({from:'terminal', icon:node.icon, title:node.title, note:node.note, color:node.color});
+    return;
+  }
+  if(node.needsRole && !clientRole) return; // wait for role pick, no bd msg yet
+  const eff = getEffectiveNode(id);
+  addMsg('bd', eff.script);
+}
+
+function restart(){
+  currentTrack = currentTrack; // keep current track selection on restart
+  currentNodeId = tracks[currentTrack].startNode;
+  clientRole = null;
+  transcript = [];
+  history = [];
+  seedNode(currentNodeId);
+  renderAll();
+}
+
+function switchTrack(trackId){
+  if(trackId === currentTrack) return;
+  currentTrack = trackId;
+  currentNodeId = tracks[currentTrack].startNode;
+  clientRole = null;
+  transcript = [];
+  history = [];
+  seedNode(currentNodeId);
+  renderAll();
+}
+
+function pickRole(role){
+  pushHistory();
+  clientRole = role;
+  addMsg('system', (role==='boss' ? '👔 老板 / 公司决策人' : '🧾 Accountant / 财务负责人'));
+  const eff = getEffectiveNode(currentNodeId);
+  addMsg('bd', eff.script);
+  renderAll();
+}
+
+function pickResponse(idx){
+  const node = getEffectiveNode(currentNodeId);
+  const resp = node.responses[idx];
+  pushHistory();
+  addMsg('client', resp.label);
+  if(resp.handling){ addMsg('bd', resp.handling); }
+  currentNodeId = resp.next;
+  seedNode(currentNodeId);
+  renderAll();
+}
+
+function toggleFaq(){
+  document.getElementById('faqPanel').classList.toggle('open');
+}
+
+function renderTrackTabs(){
+  const wrap = document.getElementById('trackTabs');
+  wrap.innerHTML = Object.keys(tracks).map(id =>
+    `<button class="track-tab ${id === currentTrack ? 'active' : ''}" onclick="switchTrack('${id}')">${tracks[id].label}</button>`
+  ).join('');
+}
+
+function renderChat(){
+  const area = document.getElementById('chatArea');
+  area.innerHTML = transcript.map(m => {
+    if(m.from === 'terminal'){
+      return `<div class="bubble terminal" style="color:${m.color}">
+        <div class="t-icon">${m.icon}</div>
+        <div class="t-title">${m.title}</div>
+        <div class="t-note">${m.note}</div>
+        <div class="t-note" style="margin-top:8px;">盖了这个电话我会WhatsApp你我们的confirmation哦。记得把我的电话save起来，还有什么需要记得找我哦！</div>
+      </div>`;
+    }
+    if(m.from === 'system'){
+      return `<div class="bubble system">${m.text}</div>`;
+    }
+    return `<div class="bubble ${m.from}">${m.text}</div>`;
+  }).join('');
+  area.scrollTop = area.scrollHeight;
+}
+
+function renderComposer(){
+  const rawNode = tracks[currentTrack].nodes[currentNodeId];
+  const chipRow = document.getElementById('chipRow');
+  const roleLabel = document.getElementById('roleLabel');
+  const faqBtn = document.getElementById('faqBtn');
+  const faqPanel = document.getElementById('faqPanel');
+
+  if(rawNode.terminal){
+    chipRow.innerHTML = '';
+    roleLabel.style.display = 'none';
+    faqBtn.style.display = 'none';
+    faqPanel.classList.remove('open');
+    faqPanel.innerHTML = '';
+    return;
+  }
+
+  const faqs = tracks[currentTrack].faqs[currentNodeId];
+  if(faqs && faqs.length){
+    faqBtn.style.display = '';
+    faqPanel.innerHTML = faqs.map(f => `<div class="faq-item"><div class="q">${f.q}</div><div class="a">${f.a}</div></div>`).join('');
+  } else {
+    faqBtn.style.display = 'none';
+    faqPanel.classList.remove('open');
+    faqPanel.innerHTML = '';
+  }
+
+  if(rawNode.needsRole && !clientRole){
+    roleLabel.style.display = '';
+    chipRow.innerHTML = `
+      <button class="chip role" onclick="pickRole('boss')">👔 老板</button>
+      <button class="chip role" onclick="pickRole('accountant')">🧾 Accountant</button>
+    `;
+    return;
+  }
+  roleLabel.style.display = 'none';
+
+  const node = getEffectiveNode(currentNodeId);
+  chipRow.innerHTML = node.responses.map((r,i) =>
+    `<button class="chip ${r.handling ? '' : 'accept'}" onclick="pickResponse(${i})">${r.label}</button>`
+  ).join('');
+}
+
+function renderAll(){
+  renderTrackTabs();
+  renderChat();
+  renderComposer();
+  document.getElementById('backBtn').style.display = history.length > 0 ? '' : 'none';
+}
+
+seedNode(currentNodeId);
+renderAll();
+</script>
+</body>
+</html>
