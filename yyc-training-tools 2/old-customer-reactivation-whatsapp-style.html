@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>YYC 老客户唤醒（WhatsApp模式）</title>
+<style>
+  :root{
+    --wa-header:#075E54;
+    --wa-header-dark:#054c43;
+    --wa-bg:#ECE5DD;
+    --wa-out:#DCF8C6;
+    --wa-in:#FFFFFF;
+    --wa-accent:#008069;
+    --wa-link:#0a95c8;
+    --wa-tick:#34B7F1;
+    --sub:#6b7386;
+    --amber:#b9860a;
+    --red:#c23b3b;
+    --green:#1f9d55;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    padding:30px 14px 60px;
+    background:#0b141a;
+    font-family:-apple-system,"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+    color:#111;
+    display:flex;
+    justify-content:center;
+  }
+  .app{
+    width:100%;
+    max-width:420px;
+    background:var(--wa-bg);
+    border-radius:18px;
+    overflow:hidden;
+    box-shadow:0 20px 50px rgba(0,0,0,.4);
+    display:flex;
+    flex-direction:column;
+  }
+
+  /* ---- header ---- */
+  .wa-header{
+    background:var(--wa-header);
+    color:#fff;
+    padding:12px 14px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .wa-back{font-size:18px;opacity:.9;}
+  .wa-avatar{
+    width:38px;height:38px;border-radius:50%;
+    background:#0a7a6c;
+    display:flex;align-items:center;justify-content:center;
+    font-size:18px;
+    flex:0 0 auto;
+  }
+  .wa-who{flex:1;min-width:0;}
+  .wa-name{font-size:15px;font-weight:700;}
+  .wa-status{font-size:11.5px;color:#cfe9e3;margin-top:1px;}
+  .wa-icons{display:flex;gap:16px;font-size:16px;opacity:.9;}
+
+  /* ---- chat body ---- */
+  .wa-chat{
+    flex:1;
+    padding:16px 12px 10px;
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    min-height:380px;
+    background-image:
+      radial-gradient(circle at 20% 10%, rgba(0,0,0,.02) 0, transparent 40%),
+      radial-gradient(circle at 80% 90%, rgba(0,0,0,.02) 0, transparent 40%);
+  }
+  .row{display:flex;margin:4px 0;}
+  .row.out{justify-content:flex-end;}
+  .row.in{justify-content:flex-start;}
+
+  .bubble{
+    max-width:82%;
+    padding:8px 10px 6px;
+    border-radius:8px;
+    font-size:14px;
+    line-height:1.55;
+    position:relative;
+    box-shadow:0 1px 1px rgba(0,0,0,.08);
+  }
+  .bubble.out{
+    background:var(--wa-out);
+    border-top-right-radius:2px;
+    color:#111;
+  }
+  .bubble.in{
+    background:var(--wa-in);
+    border-top-left-radius:2px;
+    color:#111;
+  }
+  .bubble b{color:var(--wa-header);}
+  .bubble i{color:var(--sub);}
+  .meta{
+    display:flex;
+    justify-content:flex-end;
+    align-items:center;
+    gap:3px;
+    margin-top:3px;
+    font-size:10.5px;
+    color:#6d7f76;
+  }
+  .meta .tick{color:var(--wa-tick);font-weight:700;}
+
+  .sys-row{display:flex;justify-content:center;margin:10px 0;}
+  .sys-pill{
+    background:#fbeec0;
+    color:#7a5c00;
+    font-size:11px;
+    font-weight:700;
+    padding:4px 12px;
+    border-radius:8px;
+    box-shadow:0 1px 1px rgba(0,0,0,.08);
+  }
+
+  /* ---- attached button card (mimics WhatsApp interactive buttons) ---- */
+  .wa-buttons-card{
+    max-width:82%;
+    align-self:flex-end;
+    background:#fff;
+    border-radius:0 0 8px 8px;
+    overflow:hidden;
+    margin-top:-2px;
+    box-shadow:0 1px 1px rgba(0,0,0,.08);
+    margin-bottom:8px;
+  }
+  .wa-btn-row{
+    padding:11px 14px;
+    text-align:center;
+    font-size:13.5px;
+    font-weight:700;
+    color:var(--wa-link);
+    border-top:1px solid #eee;
+    cursor:pointer;
+    background:#fff;
+  }
+  .wa-btn-row:hover{background:#f5f5f5;}
+  .wa-btn-row.primary{color:var(--wa-accent);}
+
+  .end-card{
+    max-width:88%;
+    align-self:center;
+    background:#fff;
+    border-radius:10px;
+    padding:16px;
+    text-align:center;
+    box-shadow:0 1px 3px rgba(0,0,0,.12);
+    margin:10px auto;
+  }
+  .end-card .icon{font-size:28px;margin-bottom:6px;}
+  .end-card .title{font-size:14.5px;font-weight:800;margin-bottom:6px;}
+  .end-card .note{font-size:12.5px;color:var(--sub);line-height:1.6;}
+
+  /* ---- footer controls ---- */
+  .wa-controls{
+    padding:8px 14px 10px;
+    text-align:center;
+    background:var(--wa-bg);
+  }
+  .wa-back-link{
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+    font-size:12px;
+    font-weight:700;
+    color:#4a5a55;
+    cursor:pointer;
+    margin-bottom:6px;
+  }
+  .wa-restart{
+    font-size:12px;
+    color:#5c6b66;
+    cursor:pointer;
+  }
+  .wa-restart:hover{color:var(--wa-header);}
+
+  .wa-input-bar{
+    background:#f0f0f0;
+    padding:8px 10px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .wa-input-pill{
+    flex:1;
+    background:#fff;
+    border-radius:20px;
+    padding:9px 14px;
+    font-size:13px;
+    color:#8a8a8a;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .wa-send{
+    width:36px;height:36px;border-radius:50%;
+    background:var(--wa-accent);
+    color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    font-size:16px;
+    flex:0 0 auto;
+  }
+
+  .quick-wrap{padding:6px 14px 8px;background:var(--wa-bg);}
+  .quick-toggle{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    cursor:pointer;
+    font-size:12.5px;
+    font-weight:800;
+    color:#8a6400;
+    padding:6px 2px;
+  }
+  .quick-toggle .chev{transition:transform .2s ease; color:#b9860a;}
+  .quick-toggle.open .chev{transform:rotate(90deg);}
+  .quick-list{max-height:0;overflow:hidden;transition:max-height .4s ease;}
+  .quick-list.open{max-height:3000px;}
+  .quick-item{
+    background:#fffaf0;
+    border:1px solid #f3e3bd;
+    border-radius:10px;
+    padding:9px 11px;
+    margin-top:6px;
+    font-size:12.5px;
+    line-height:1.6;
+  }
+  .quick-item .q{font-weight:800;color:#5a4200;margin-bottom:3px;}
+  .quick-item .a{color:#4a4636;}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="wa-header">
+    <div class="wa-back">←</div>
+    <div class="wa-avatar">🏢</div>
+    <div class="wa-who">
+      <div class="wa-name">YYC Academy</div>
+      <div class="wa-status" id="waStatus">online · Step 1 / 5</div>
+    </div>
+    <div class="wa-icons">📹 📞 ⋮</div>
+  </div>
+
+  <div class="wa-chat" id="chat"></div>
+
+  <div class="wa-controls">
+    <div id="backRow"></div>
+    <div class="wa-restart" onclick="restart()">↺ 重新开始 Restart Call Script</div>
+  </div>
+
+  <div class="quick-wrap" id="quickWrap" style="display:none;"></div>
+
+  <div class="wa-input-bar">
+    <div class="wa-input-pill">😊 &nbsp; 输入客户实际回应…</div>
+    <div class="wa-send">➤</div>
+  </div>
+</div>
+
+<script>
+const TOTAL_STEPS = 5;
+
+const nodes = {
+  OPEN:{
+    step:1,
+    section:"开场破冰",
+    script:`Hello 请问是 <b>[xxx]</b> 吗？你好，我是<b>[XXX]</b> from YYC，请问方便讲电话吗？很快的！`,
+    responses:[
+      {label:"Yes", next:"RECONNECT"},
+      {label:"No", handling:"方便大概几点打回给你？", next:"CALLBACK"}
+    ]
+  },
+  RECONNECT:{
+    step:2,
+    section:"确认之前关系",
+    script:`我这里看到之前你有inquiry过我们的服务的，你还记得吗？（停顿聆听）那我的同事有帮到你吗？还是你已经是engaged了我们的服务了。`,
+    responses:[
+      {label:"记得，同事有帮到我", handling:"那很好！我是负责Academy的部门，我叫<b>[XXXX]</b>；那我今天打过来，主要是想跟你update一下，我们最近有推出新的免费课程和一些服务，看适不适合您现在的需求。", next:"COURSE_PITCH"},
+      {label:"记得，但好像没什么人跟进 / 没帮到", handling:"啊！对不起咧，那我可以帮到你吗。请问你需要我们什么服务呢？", next:"SERVICE_PITCH"},
+      {label:"有，我已经是你们的客户了", handling:"明白，那很好！既然你已经是我们的客户，我是负责Academy的部门，我叫<b>[XXXX]</b>，我这次打来是想跟你分享新的课程，都是我们Datin Shin亲自分享的哦，我可以跟你分享分享吗？", next:"COURSE_PITCH"},
+      {label:"不记得了 / 没什么印象", handling:"没关系，我是负责Academy的部门，我叫<b>[XXXX]</b>，我今天打来主要是想跟你分享一下我们最近的免费课程，都是我们Datin Shin亲自分享的哦，我可以跟你分享分享吗？", next:"COURSE_PITCH"}
+    ]
+  },
+  COURSE_PITCH:{
+    step:3,
+    section:"Step A · 课程推荐",
+    script:`我们最近有两个免费的线上课程的，<br>第1是：「传承与买卖M&A」<br>第2是：「现金流管理」<br><br>我都可以帮你报名的，可以吗？`,
+    responses:[
+      {label:"可以 / OK / 再看吧", next:"COURSE_REGISTER"},
+      {label:"暂时不用", next:"SERVICE_PITCH"},
+      {label:"讲什么的哦？", handling:"首先《传承与买卖公司 / M&A》Datin Shin亲自教你<br>✅ 8个步骤怎样并购（M&A）或把公司卖出好价钱（Valuation）。<br>✅ 如何顺利把企业传承给下一代？<br><br>那「现金流管理」Datin Shin亲自教你<br>✅ 用你公司真实的Data跟着我们的方式计算公司的CCC和Working Capital<br>✅ 我们教你怎样算公司的现金流状况<br><br>是在线上Zoom的哦，而且是免费的，帮你报名OK吗？", next:"COURSE_PITCH_CONFIRM"}
+    ]
+  },
+  COURSE_PITCH_CONFIRM:{
+    step:3,
+    section:"Step A · 课程推荐（确认）",
+    script:`那要帮你报名吗？`,
+    responses:[
+      {label:"可以 / OK", next:"COURSE_REGISTER"},
+      {label:"暂时不用", next:"SERVICE_PITCH"}
+    ]
+  },
+  COURSE_REGISTER:{
+    step:4,
+    section:"课程报名资料",
+    script:`我们的《传承与买卖公司》是在<b>(X)月（X)日 下午2pm</b>。那「现金流管理」是在<b>(X)月（X)日 X pm</b>。我需要你跟你confirm一下然后报名哦。<br><br>公司名字：<i>跟客户核对显示的公司名称</i><br>Email address：<i>跟客户核对是否已有，没有的话现在问</i>`,
+    responses:[
+      {label:"资料确认，完成登记", next:"SERVICE_PITCH"}
+    ]
+  },
+  SERVICE_PITCH:{
+    step:5,
+    section:"Step B · 服务推荐",
+    script:`好的！那另外，我们这边也可以在几方面帮到您：<br>✅ Audit / Tax（公司的审计和报税）一个好的Auditor&Tax Agent是很重要的<br>✅ 想要解决股东问题 / 现金流问题<br>✅ 还是其他Tax相关的课程<br><br>不知道您现在比较想先了解哪一个？`,
+    responses:[
+      {label:"想了解 Audit / Tax", handling:"好的，那这个我可以请我们的同事跟见面讲解更多关于我们的报价和我们的服务内容，OK吗？", next:"FOLLOWUP_SERVICE"},
+      {label:"想要解决股东问题 / 现金流问题", handling:"（推回课程）其实相信我，参加我们的课程先。你上完了我可以帮你安排见我们的Consultant的，我帮你报名OK吗？", next:"FOLLOWUP_SERVICE"},
+      {label:"还是其他Tax相关的课程", handling:"好的，我们这边有几个不同的Tax课程，有SST的，Stamp Duty的，Einvoice的，你看比较想了解哪一方面的问题呢？", next:"TAX_FOLLOWUP"},
+      {label:"都不需要", handling:"没关系，你可以先把我号码存起来先，之后有新课程或者有最新消息再通知你咯。", next:"SOFT_CLOSE"}
+    ]
+  },
+  TAX_FOLLOWUP:{
+    step:5,
+    section:"Tax课程细分",
+    script:`好的，那这个我可以请我们的同事跟见面讲解更多关于我们的报价和我们的服务内容，OK吗？`,
+    responses:[
+      {label:"OK，安排见面", next:"FOLLOWUP_SERVICE"}
+    ]
+  },
+  CALLBACK:{terminal:true, icon:"📞", color:"var(--amber)", title:"稍后回拨", note:"按约定时间回拨，重新从开场开始。"},
+  FOLLOWUP_SERVICE:{terminal:true, icon:"📋", color:"var(--green)", title:"已表达服务兴趣，待跟进", note:"把号码save起来，告知你的名字，后续安排同事联系客户 / 安排见面。"},
+  SOFT_CLOSE:{terminal:true, icon:"📬", color:"var(--amber)", title:"暂时不需要，已存号码", note:"客户已把你的号码存起来，之后有新课程 / 消息再通知。"}
+};
+
+const nodeFaqs = {};
+
+let currentNodeId = "OPEN";
+let handlingResponse = null;
+let history = [];
+
+function snapshot(){
+  return {
+    currentNodeId: currentNodeId,
+    handlingResponse: handlingResponse ? {...handlingResponse} : null
+  };
+}
+function pushHistory(){ history.push(snapshot()); }
+
+function goBack(){
+  if(history.length === 0) return;
+  const prev = history.pop();
+  currentNodeId = prev.currentNodeId;
+  handlingResponse = prev.handlingResponse;
+  render();
+}
+
+function restart(){
+  currentNodeId = "OPEN";
+  handlingResponse = null;
+  history = [];
+  render();
+}
+
+function pickResponse(idx){
+  const node = nodes[currentNodeId];
+  const resp = node.responses[idx];
+  pushHistory();
+  if(resp.handling){
+    handlingResponse = resp;
+    render();
+  } else {
+    currentNodeId = resp.next;
+    handlingResponse = null;
+    render();
+  }
+}
+
+function continueAfterHandling(){
+  pushHistory();
+  currentNodeId = handlingResponse.next;
+  handlingResponse = null;
+  render();
+}
+
+function timeNow(){
+  const d = new Date();
+  return d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+}
+
+function renderQuickWrap(){
+  const wrap = document.getElementById('quickWrap');
+  const faqs = nodeFaqs[currentNodeId];
+  if(!faqs || !faqs.length){
+    wrap.style.display = 'none';
+    wrap.innerHTML = '';
+    return;
+  }
+  wrap.style.display = '';
+  const itemsHtml = faqs.map(f => `<div class="quick-item"><div class="q">${f.q}</div><div class="a">${f.a}</div></div>`).join('');
+  wrap.innerHTML = `
+    <div class="quick-toggle" id="quickToggle" onclick="toggleQuick()">
+      <span>⚡ 这一步的快速拒绝 / 常见问题</span>
+      <span class="chev">▶</span>
+    </div>
+    <div class="quick-list" id="quickList">${itemsHtml}</div>
+  `;
+}
+
+function render(){
+  const rawNode = nodes[currentNodeId];
+  const chat = document.getElementById('chat');
+  const backRow = document.getElementById('backRow');
+  const status = document.getElementById('waStatus');
+  backRow.innerHTML = history.length > 0 ? `<div class="wa-back-link" onclick="goBack()">← 上一题</div>` : '';
+  renderQuickWrap();
+
+  if(rawNode.terminal){
+    status.textContent = "online · 通话结束";
+    chat.innerHTML = `
+      <div class="end-card">
+        <div class="icon">${rawNode.icon}</div>
+        <div class="title">${rawNode.title}</div>
+        <div class="note">${rawNode.note}</div>
+      </div>
+    `;
+    return;
+  }
+
+  status.textContent = "online · Step " + rawNode.step + " / " + TOTAL_STEPS;
+
+  let html = `
+    <div class="sys-row"><div class="sys-pill">${rawNode.section}</div></div>
+    <div class="row out">
+      <div class="bubble out">${rawNode.script}<div class="meta">${timeNow()} <span class="tick">✓✓</span></div></div>
+    </div>
+  `;
+
+  if(handlingResponse){
+    html += `
+      <div class="row in">
+        <div class="bubble in">${handlingResponse.label}<div class="meta">${timeNow()}</div></div>
+      </div>
+      <div class="row out">
+        <div class="bubble out">${handlingResponse.handling}<div class="meta">${timeNow()} <span class="tick">✓✓</span></div></div>
+      </div>
+      <div class="wa-buttons-card">
+        <div class="wa-btn-row primary" onclick="continueAfterHandling()">继续 → 下一步</div>
+      </div>
+    `;
+    chat.innerHTML = html;
+    return;
+  }
+
+  let btnsHtml = '';
+  rawNode.responses.forEach((r, i) => {
+    btnsHtml += `<div class="wa-btn-row" onclick="pickResponse(${i})">${r.label}</div>`;
+  });
+
+  html += `<div class="wa-buttons-card">${btnsHtml}</div>`;
+  chat.innerHTML = html;
+}
+
+function toggleQuick(){
+  document.getElementById('quickToggle').classList.toggle('open');
+  document.getElementById('quickList').classList.toggle('open');
+}
+
+render();
+</script>
+</body>
+</html>

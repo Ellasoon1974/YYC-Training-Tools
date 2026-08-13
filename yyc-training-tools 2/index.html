@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>YYC BD Training Tools</title>
+<style>
+  :root{
+    --navy:#1d3f72;
+    --navy-dark:#16305a;
+    --blue-soft:#eaf2fc;
+    --gray-bg:#eef1f5;
+    --border:#e3e7ee;
+    --text:#1f2430;
+    --sub:#6b7386;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    padding:30px 14px 60px;
+    background:#dde3ec;
+    font-family:-apple-system,"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+    color:var(--text);
+    display:flex;
+    justify-content:center;
+  }
+  .app{
+    width:100%;
+    max-width:480px;
+    background:#fff;
+    border-radius:18px;
+    overflow:hidden;
+    box-shadow:0 20px 50px rgba(20,30,60,.18);
+  }
+  .header{
+    background:linear-gradient(135deg,var(--navy),var(--navy-dark));
+    color:#fff;
+    padding:26px 24px 22px;
+  }
+  .header h1{margin:0;font-size:22px;font-weight:800;}
+  .header .sub{font-size:13px;color:#c9d6ea;margin-top:6px;}
+  .list{padding:20px;display:flex;flex-direction:column;gap:12px;}
+  .card{
+    display:block;
+    background:var(--blue-soft);
+    border:1.5px solid var(--border);
+    border-radius:14px;
+    padding:16px 18px;
+    text-decoration:none;
+    color:var(--text);
+    transition:border-color .15s ease, transform .1s ease;
+  }
+  .card:hover{border-color:var(--navy);transform:translateY(-1px);}
+  .card .name{font-size:15.5px;font-weight:800;color:var(--navy);margin-bottom:4px;}
+  .card .desc{font-size:13px;color:var(--sub);line-height:1.5;}
+  .footer{padding:6px 24px 20px;font-size:12px;color:var(--sub);text-align:center;}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="header">
+    <h1>YYC BD 培训工具</h1>
+    <div class="sub">Calling Script Assistants · 点击进入对应工具</div>
+  </div>
+
+  <div class="list">
+    <a class="card" href="wsap-cash-flow-followup.html">
+      <div class="name">WSAP · 现金流 Follow-up</div>
+      <div class="desc">分享会学员邀约面谈流程（L1–L8 + 未出席分支 + 身份判断 + FAQ）</div>
+    </a>
+
+    <a class="card" href="old-customer-reactivation.html">
+      <div class="name">老客户唤醒 / 服务推荐</div>
+      <div class="desc">Academy Re-engagement Calling Script（含快速问答 FAQ）</div>
+    </a>
+
+    <a class="card" href="old-customer-reactivation-whatsapp-style.html">
+      <div class="name">老客户唤醒（WhatsApp 聊天气泡版）</div>
+      <div class="desc">同一套script，WhatsApp聊天界面样式</div>
+    </a>
+
+    <a class="card" href="webinar-invite-assistant.html">
+      <div class="name">Webinar 邀约助手</div>
+      <div class="desc">传承与买卖M&amp;A / 现金流管理 · 直接邀约通话流程</div>
+    </a>
+
+    <a class="card" href="webinar-invite-static.html">
+      <div class="name">Webinar 邀约script（普通版）</div>
+      <div class="desc">静态阅读版本，非互动</div>
+    </a>
+  </div>
+
+  <div class="footer">YYC Business Academy · Internal Training Use</div>
+</div>
+
+</body>
+</html>
