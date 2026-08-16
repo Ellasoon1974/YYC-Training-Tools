@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WSAD 筹备 Checklist 工具</title>
+<style>
+  :root{
+    --navy:#1d3f72;
+    --navy-dark:#16305a;
+    --blue-soft:#eaf2fc;
+    --border:#e3e7ee;
+    --text:#1f2430;
+    --sub:#6b7386;
+    --green:#1f9d55;
+    --green-soft:#e9f8ee;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    padding:0 0 60px;
+    background:#dde3ec;
+    font-family:-apple-system,"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+    color:var(--text);
+  }
+  .header{
+    background:linear-gradient(135deg,var(--navy),var(--navy-dark));
+    color:#fff;
+    padding:22px 20px 18px;
+    text-align:center;
+  }
+  .header h1{margin:0;font-size:20px;font-weight:800;}
+  .header .sub{font-size:12.5px;color:#c9d6ea;margin-top:6px;}
+  .back{display:inline-block;color:#c9d6ea;font-size:12px;font-weight:700;text-decoration:none;margin-bottom:8px;}
+
+  .tabbar{
+    display:flex;
+    overflow-x:auto;
+    background:#fff;
+    border-bottom:1px solid var(--border);
+    position:sticky;
+    top:0;
+    z-index:10;
+    -webkit-overflow-scrolling:touch;
+  }
+  .tabbar::-webkit-scrollbar{display:none;}
+  input[type="radio"].tabradio{display:none;}
+  label.tab-btn{
+    flex:0 0 auto;
+    padding:13px 14px;
+    font-size:13px;
+    font-weight:700;
+    color:var(--sub);
+    white-space:nowrap;
+    cursor:pointer;
+    border-bottom:3px solid transparent;
+  }
+  .pane{display:none;padding:16px 16px 40px;max-width:720px;margin:0 auto;}
+  #tab1:checked ~ .tabbar label[for="tab1"],
+  #tab2:checked ~ .tabbar label[for="tab2"],
+  #tab3:checked ~ .tabbar label[for="tab3"],
+  #tab4:checked ~ .tabbar label[for="tab4"],
+  #tab5:checked ~ .tabbar label[for="tab5"]{
+    color:var(--navy);
+    border-bottom-color:var(--navy);
+    background:var(--blue-soft);
+  }
+  #tab1:checked ~ .content #pane1,
+  #tab2:checked ~ .content #pane2,
+  #tab3:checked ~ .content #pane3,
+  #tab4:checked ~ .content #pane4,
+  #tab5:checked ~ .content #pane5{
+    display:block;
+  }
+
+  h2.section-title{
+    font-size:15px;
+    color:var(--navy);
+    border-bottom:2px solid var(--blue-soft);
+    padding-bottom:8px;
+    margin:22px 0 12px;
+  }
+  h2.section-title:first-child{margin-top:0;}
+
+  .progress-wrap{
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:10px 14px;
+    margin-bottom:14px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .progress-bar{flex:1;height:8px;background:var(--blue-soft);border-radius:6px;overflow:hidden;}
+  .progress-fill{height:100%;background:var(--green);width:0%;transition:width .25s;}
+  .progress-label{font-size:12px;font-weight:700;color:var(--sub);white-space:nowrap;}
+
+  .check-item{
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:12px 14px;
+    margin-bottom:8px;
+    font-size:13.5px;
+    line-height:1.6;
+  }
+  .check-row{display:flex;align-items:flex-start;gap:10px;}
+  .check-item input[type="checkbox"]{
+    width:20px;height:20px;flex:0 0 20px;margin-top:1px;accent-color:var(--green);
+  }
+  .check-item.checked{background:var(--green-soft);border-color:#cfe9d6;}
+  .check-item .num{font-weight:800;color:var(--navy);margin-right:4px;}
+  .check-item.checked .txt{color:#5a6270;text-decoration:line-through;}
+  .note-field{
+    display:block;
+    width:100%;
+    margin-top:8px;
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:6px 9px;
+    font-size:12.5px;
+    font-family:inherit;
+    background:#f9fafc;
+  }
+
+  .reset-btn, .copy-btn, .addrow-btn{
+    display:inline-block;
+    font-size:12.5px;
+    font-weight:700;
+    color:var(--navy);
+    background:var(--blue-soft);
+    border:1px solid var(--border);
+    padding:7px 14px;
+    border-radius:8px;
+    cursor:pointer;
+  }
+  .reset-row{text-align:right;margin-bottom:10px;}
+
+  .mini-btn{
+    border:1px solid var(--border);
+    background:#fff;
+    border-radius:5px;
+    font-size:11px;
+    padding:3px 6px;
+    margin-right:3px;
+    cursor:pointer;
+    color:var(--navy);
+  }
+  .mini-btn.del{color:#c0392b;}
+  .action-cell{white-space:nowrap;text-align:center;}
+  input.year-input{min-width:70px;font-weight:700;}
+  .table-scroll{overflow-x:auto;}
+  .table-scroll table.datatable{min-width:560px;}
+
+  table.datatable{
+    width:100%;
+    border-collapse:collapse;
+    font-size:13px;
+    margin-top:6px;
+    background:#fff;
+  }
+  table.datatable td, table.datatable th{
+    border:1px solid var(--border);
+    padding:7px 8px;
+  }
+  table.datatable th{background:var(--blue-soft);color:var(--navy);font-size:12px;}
+  table.datatable td.label{background:#f7f9fb;font-weight:700;color:var(--sub);}
+
+  .remark-box{
+    background:#fdf7ea;
+    border:1px solid #f0dfae;
+    border-radius:8px;
+    padding:12px 14px;
+    font-size:13px;
+    line-height:1.7;
+    margin-top:16px;
+  }
+  .remark-box b{color:var(--navy);}
+
+  textarea.wa-box{
+    width:100%;
+    min-height:260px;
+    font-size:13.5px;
+    line-height:1.7;
+    font-family:inherit;
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:14px;
+    resize:vertical;
+    background:#fff;
+  }
+  input.field, textarea.field{
+    width:100%;
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:8px 10px;
+    font-size:13.5px;
+    font-family:inherit;
+    background:#fff;
+  }
+  .field-row{margin-bottom:10px;}
+  .field-row label{display:block;font-size:12.5px;font-weight:700;color:var(--sub);margin-bottom:4px;}
+
+  .toast{
+    position:fixed;
+    bottom:24px;
+    left:50%;
+    transform:translateX(-50%);
+    background:var(--navy);
+    color:#fff;
+    padding:10px 18px;
+    border-radius:20px;
+    font-size:13px;
+    font-weight:700;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .25s;
+    z-index:999;
+  }
+  .toast.show{opacity:1;}
+
+  .print-row{text-align:left;margin-bottom:14px;}
+  .print-btn{
+    display:inline-block;
+    font-size:12.5px;
+    font-weight:700;
+    color:#fff;
+    background:var(--navy);
+    border:1px solid var(--navy);
+    padding:8px 16px;
+    border-radius:8px;
+    cursor:pointer;
+  }
+  .export-btn{
+    display:inline-block;
+    font-size:12.5px;
+    font-weight:700;
+    color:var(--navy);
+    background:#fff;
+    border:1.5px solid var(--navy);
+    padding:8px 16px;
+    border-radius:8px;
+    cursor:pointer;
+    margin-left:8px;
+  }
+
+  @media print{
+    .tabbar, .back, .print-btn, .export-btn, .reset-btn, .copy-btn, .addrow-btn,
+    .mini-btn, .action-cell, th.action-header, .toast{
+      display:none !important;
+    }
+    body{background:#fff;padding:0;font-size:10.5px;}
+    .header{background:#fff !important;color:#000 !important;padding:0 0 6px;text-align:left;}
+    .header h1{font-size:15px;}
+    .header .sub{color:#555 !important;font-size:9.5px;margin-top:2px;}
+    .pane{max-width:100%;padding:0;}
+    h2.section-title{font-size:11.5px;margin:8px 0 5px;padding-bottom:3px;}
+    .progress-wrap{padding:5px 8px;margin-bottom:6px;}
+    .progress-label{font-size:9.5px;}
+    .checklist{column-count:2;column-gap:12px;}
+    .check-item{
+      break-inside:avoid;
+      padding:5px 8px;
+      margin-bottom:4px;
+      font-size:9.5px;
+      line-height:1.25;
+      border-radius:4px;
+    }
+    .check-item input[type="checkbox"]{width:11px;height:11px;flex:0 0 11px;}
+    .note-field{font-size:9px;padding:3px 5px;margin-top:4px;}
+    table.datatable{font-size:9px;margin-top:3px;break-inside:avoid;}
+    table.datatable td, table.datatable th{padding:3px 4px;}
+    .remark-box{font-size:9px;padding:6px 8px;margin-top:6px;}
+    .field-row{margin-bottom:4px;}
+    .field-row label{font-size:9px;margin-bottom:1px;}
+    input.field, textarea.field{padding:3px 5px;font-size:9.5px;}
+    textarea.wa-box{min-height:150px;font-size:9.5px;padding:8px;line-height:1.4;}
+  }
+  @page{size:A4;margin:12mm;}
+</style>
+</head>
+<body>
+
+<input type="radio" name="tabs" id="tab1" class="tabradio" checked>
+<input type="radio" name="tabs" id="tab2" class="tabradio">
+<input type="radio" name="tabs" id="tab3" class="tabradio">
+<input type="radio" name="tabs" id="tab4" class="tabradio">
+<input type="radio" name="tabs" id="tab5" class="tabradio">
+
+<div class="header">
+  <a class="back" href="index.html">← 返回主页</a>
+  <h1>WSAD 筹备 Checklist 工具</h1>
+  <div class="sub">YYC Advisors Sdn Bhd · 121 WSA Demo 筹备用</div>
+</div>
+
+<div class="tabbar">
+  <label class="tab-btn" for="tab1">准备清单</label>
+  <label class="tab-btn" for="tab2">文件清单</label>
+  <label class="tab-btn" for="tab3">WhatsApp模板</label>
+  <label class="tab-btn" for="tab4">客户资料表</label>
+  <label class="tab-btn" for="tab5">访谈问题</label>
+</div>
+
+<div class="content">
+
+  <!-- PANE 1: READ ME WSA Demo -->
+  <div class="pane" id="pane1">
+    <div class="print-row"><span class="print-btn" onclick="window.print()">🖨️ 打印 / 下载 PDF</span></div>
+    <div class="progress-wrap" id="prog2wrap">
+      <div class="progress-bar"><div class="progress-fill" id="prog2fill"></div></div>
+      <div class="progress-label" id="prog2label">0 / 20</div>
+    </div>
+    <div class="reset-row"><span class="reset-btn" onclick="resetSection('s2')">重置本页勾选</span></div>
+
+    <h2 class="section-title">A. WSA Demo 前一天 & 当天前</h2>
+    <div class="checklist" data-section="s2">
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s2-1"><div class="txt"><span class="num">1.</span>Book Room & Parking Reserve</div></div></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s2-2"><div class="txt"><span class="num">2.</span>准备咨询问题（WSA Questionaire）</div></div></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s2-3"><div class="txt"><span class="num">3.</span>准备工具并彩色打印（WSAD Tools checklist）*POWER CASH 非完整报告*</div></div></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s2-4"><div class="txt"><span class="num">4.</span>与顾问过一遍并简报客户公司背景（业务性质；痛点；财务数据）</div></div></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s2-5"><div class="txt"><span class="num">5.</span>准备给客户的解决方案（亏损客户准备 MAS story；CCC & 告知客户这是从你的account来的，现金流网络课教你CCC）</div></div></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s2-6"><div class="txt"><span class="num">6.</span>用AI检查公司GP benchmark & 痛点（丢入Audited report和Power Cash（CCC, WC & Power of 1））</div></div></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s2-7"><div class="txt"><span class="num">7.</span>种下种子——加入broadcast、社群资讯 & 私讯</div></div></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s2-8"><div class="txt"><span class="num">8.</span>请客户在 WSA demo 前先观看 preview video</div></div></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s2-9"><div class="txt"><span class="num">9.</span>确认客户最早可约时间（若非 Boey 的咨询时段）</div></div></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s2-10"><div class="txt"><span class="num">10.</span>WSAD session 前30分钟简报及对齐策略</div></div></div>
+    </div>
+
+    <h2 class="section-title">B. WSAD Session 进行中</h2>
+    <div class="checklist" data-section="s2">
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s2-11"><div class="txt"><span class="num">1.</span>（Greeting）感谢客户前来，先透过 Questionaire 了解客户情况</div></div></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s2-12"><div class="txt"><span class="num">2.</span>（Type in OneNote）简单有意义的重点，方便复制给顾问；持续记录并观察卖点，决定提供顾问哪些工具</div></div></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s2-13"><div class="txt"><span class="num">3.</span>（桌上备好透明文件夹）Susunan：WSA Calendar 最新版；Vision 完整版最新版；FaceTool；CNEN Idris Jala Story & checklist；Power Cash Report 及其他相关客户痛点工具</div></div></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s2-14"><div class="txt"><span class="num">4.</span>（成交）WhatsApp 备好付款链接讯息（分期 / TT / 注册讯息）</div></div></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s2-15"><div class="txt"><span class="num">5.</span>（立即付款）提供 WSA Calendar；Action Plan；Power Cash 及工具于透明文件夹给客户</div></div></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s2-16"><div class="txt"><span class="num">6.</span>（未付款）提供 WSA Calendar；Action Plan；Power Cash 及工具于透明文件夹给客户</div></div></div>
+    </div>
+
+    <h2 class="section-title">C. WSA Demo 结束后</h2>
+    <div class="checklist" data-section="s2">
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s2-17"><div class="txt"><span class="num">1.</span>扫描 Action Plan & Calendar 并 WhatsApp 给 Boey</div></div></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s2-18"><div class="txt"><span class="num">2.</span>将透明文件夹放回 Boey 的房间</div></div></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s2-19"><div class="txt"><span class="num">3.</span>存档在自己PC文件夹</div></div></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s2-20"><div class="txt"><span class="num">4.</span>（未付款）需持续发送相关痛点视频给客户直至成功付款</div></div></div>
+    </div>
+  </div>
+
+  <!-- PANE 2: WSAD Checklist -->
+  <div class="pane" id="pane2">
+    <div class="print-row"><span class="print-btn" onclick="window.print()">🖨️ 打印 / 下载 PDF</span></div>
+    <div class="progress-wrap" id="prog3wrap">
+      <div class="progress-bar"><div class="progress-fill" id="prog3fill"></div></div>
+      <div class="progress-label" id="prog3label">0 / 27</div>
+    </div>
+    <div class="reset-row"><span class="reset-btn" onclick="resetSection('s3')">重置本页勾选</span></div>
+
+    <h2 class="section-title">现场准备 Physical Consultation</h2>
+    <div class="checklist" data-section="s3">
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s3-1"><div class="txt"><span class="num">1.</span>Consultants</div></div></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s3-2"><div class="txt"><span class="num">2.</span>Booking places（Winning 11）& number plate</div></div></div>
+    </div>
+
+    <h2 class="section-title">所需文件 Documents Needed</h2>
+    <div class="checklist" data-section="s3">
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s3-3"><div class="txt"><span class="num">1.</span>Audited report（第一页、第二页（business nature）、P&L & Balance Sheet）1年</div></div></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s3-4"><div class="txt"><span class="num">2.</span>Pain point（如果 salesperson 已知道）</div></div></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s3-5"><div class="txt"><span class="num">3.</span>Company profile</div></div></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s3-6"><div class="txt"><span class="num">4.</span>Power of 1 工具</div></div></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s3-7"><div class="txt"><span class="num">5.</span>Lian Lian CCC</div></div></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s3-8"><div class="txt"><span class="num">6.</span>Ah Beng CCC</div></div></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s3-9"><div class="txt"><span class="num">7.</span>AAA CCC</div></div></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s3-10"><div class="txt"><span class="num">8.</span>FACETool</div></div></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s3-11"><div class="txt"><span class="num">9.</span>Action Plan x2</div></div></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s3-12"><div class="txt"><span class="num">10.</span>Presentation slides（Pang's 100页 WSA）（softcopy）</div></div></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s3-13"><div class="txt"><span class="num">11.</span>客户问题清单（如有）</div></div></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s3-14"><div class="txt"><span class="num">12.</span>Template summary of Client Information（给Boey / Leader进行WSA demo，过去2年营收与利润总结）</div></div></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s3-15"><div class="txt"><span class="num">13.</span>准备所有销售 slides 并确保能登入 WSA platform 和 ESOS software</div></div></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s3-16"><div class="txt"><span class="num">14.</span>打印4个 modules calendar</div></div></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s3-17"><div class="txt"><span class="num">15.</span>Vision flyer</div></div></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s3-18"><div class="txt"><span class="num">16.</span>YYC David VS Goliath Journey Video</div></div></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s3-19"><div class="txt"><span class="num">17.</span>Power Cash Report（CCC & Power of 1）</div></div></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s3-20"><div class="txt"><span class="num">18.</span>计算机 x2</div></div></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s3-21"><div class="txt"><span class="num">19.</span>五道门</div></div></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s3-22"><div class="txt"><span class="num">20.</span>Collection Checklist x2</div></div></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s3-23"><div class="txt"><span class="num">21.</span>Preferred Values</div></div></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s3-24"><div class="txt"><span class="num">22.</span>Value Card（BOX）</div></div></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s3-25"><div class="txt"><span class="num">23.</span>5年计划 / 蓝图（5年蓝图）</div></div></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s3-26"><div class="txt"><span class="num">24.</span>MAS checklist</div></div></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s3-27"><div class="txt"><span class="num">25.</span>Idris Jalal Story & Checklist</div></div></div>
+    </div>
+
+    <div class="remark-box">
+      <b>备注：</b><br>
+      1. 24小时前，需将 checklist & audited report 发给顾问进行121 WSA（Boey / Leaders）<br>
+      2. 参考 WhatsApp 模板分页<br>
+      3. 若客户想要另一份 Power Cash Report（即2份），S&M 将加收 3k
+    </div>
+  </div>
+
+  <!-- PANE 3: WhatsApp Template -->
+  <div class="pane" id="pane3">
+    <div class="print-row"><span class="print-btn" onclick="window.print()">🖨️ 打印 / 下载 PDF</span></div>
+    <h2 class="section-title">WhatsApp 邀约模板</h2>
+    <p style="font-size:12.5px;color:var(--sub);margin-top:-4px;">现场咨询（YYC HQ）· 编辑后点击复制，直接贴到 WhatsApp</p>
+    <textarea class="wa-box" id="waBox">Agenda：
+
+Proposed Time：
+Proposed Date：
+Proposed Venue：YYC HQ
+
+1. Document required prior meeting
+   a) Latest audited report
+
+2. *How many pax will attend this meeting：*
+
+3. *Directors & Shareholders will be attending this meeting？*
+
+4. Enquiries：
+</textarea>
+    <div class="reset-row" style="text-align:left;margin-top:10px;">
+      <span class="copy-btn" onclick="copyWA()">📋 复制文字</span>
+    </div>
+
+    <h2 class="section-title">流程提醒</h2>
+    <table class="datatable">
+      <tr><td class="label">Step 1</td><td>Check Boey time availability & book room（可为客户预留车位）</td></tr>
+      <tr><td class="label">Step 2</td><td>准备 Summary of Client 模板给 Boey 进行 WSA 咨询</td></tr>
+      <tr><td class="label">Step 3</td><td>附上 P&L、Balance Sheet、Cash Flow Statement、Cash Flow Tools（依 checklist）</td></tr>
+      <tr><td class="label">Step 4</td><td>WhatsApp 客户 & Boey 该 Agenda</td></tr>
+      <tr><td class="label">Step 5</td><td>会议前一天 Brief Boey</td></tr>
+    </table>
+  </div>
+
+  <!-- PANE 4: Summary of Client -->
+  <div class="pane" id="pane4">
+    <div class="print-row"><span class="print-btn" onclick="window.print()">🖨️ 打印 / 下载 PDF</span><span class="export-btn" onclick="exportClientRecord()">💾 保存客户资料（含访谈问题）</span></div>
+    <h2 class="section-title">WSA121 / WSAD 客户资料表 Summary</h2>
+    <p style="font-size:12.5px;color:var(--sub);margin-top:-4px;">Subject: WSA 121 Consultation / WSAD Session</p>
+
+    <div class="field-row"><label>1. Company name</label><input class="field" id="c-company"></div>
+    <div class="field-row"><label>2. Client name</label><input class="field" id="c-client"></div>
+    <div class="field-row"><label>3. Client's location</label><input class="field" id="c-location"></div>
+    <div class="field-row"><label>4. Business nature</label><input class="field" id="c-nature"></div>
+    <div class="field-row"><label>5. Meeting Date</label><input class="field" id="c-date" type="date"></div>
+    <div class="field-row"><label>6. Meeting Time</label><input class="field" id="c-time" type="time"></div>
+    <div class="field-row"><label>7. Meeting Venue</label><input class="field" id="c-venue"></div>
+    <div class="field-row"><label>8. Consultant</label><input class="field" id="c-consultant"></div>
+    <div class="field-row"><label>9. Current audit firm</label><input class="field" id="c-auditfirm"></div>
+
+    <h2 class="section-title">10. 营收 & 利润（自动算 margin %）</h2>
+    <p style="font-size:12px;color:var(--sub);margin:-4px 0 6px;">可自行加行、用 ▲▼ 调顺序、🗑 删除</p>
+    <div class="table-scroll">
+    <table class="datatable" id="revTable">
+      <tr><th>Year</th><th>Revenue</th><th>Gross Profit</th><th>GP margin %</th><th>Profit After Tax</th><th>PAT margin %</th><th class="action-header">操作</th></tr>
+      <tr>
+        <td><input class="field year-input" value="2024"></td>
+        <td><input class="field rev-input" data-k="rev"></td>
+        <td><input class="field rev-input" data-k="gp"></td>
+        <td class="gpm">–</td>
+        <td><input class="field rev-input" data-k="pat"></td>
+        <td class="patm">–</td>
+        <td class="action-cell"><button type="button" class="mini-btn" onclick="rowMove(this,-1)">▲</button><button type="button" class="mini-btn" onclick="rowMove(this,1)">▼</button><button type="button" class="mini-btn del" onclick="rowDelete(this)">🗑</button></td>
+      </tr>
+      <tr>
+        <td><input class="field year-input" value="2025"></td>
+        <td><input class="field rev-input" data-k="rev"></td>
+        <td><input class="field rev-input" data-k="gp"></td>
+        <td class="gpm">–</td>
+        <td><input class="field rev-input" data-k="pat"></td>
+        <td class="patm">–</td>
+        <td class="action-cell"><button type="button" class="mini-btn" onclick="rowMove(this,-1)">▲</button><button type="button" class="mini-btn" onclick="rowMove(this,1)">▼</button><button type="button" class="mini-btn del" onclick="rowDelete(this)">🗑</button></td>
+      </tr>
+    </table>
+    </div>
+    <div class="reset-row" style="text-align:left;margin-top:8px;">
+      <span class="addrow-btn" onclick="addRevRow()">+ 加一行</span>
+    </div>
+
+    <h2 class="section-title">11. Audit Fee</h2>
+    <div class="table-scroll">
+    <table class="datatable" id="auditFeeTable">
+      <tr><th>Year</th><th>Existing audit fee</th><th>YYC Audit fee</th><th class="action-header">操作</th></tr>
+      <tr><td><input class="field year-input" value="2024"></td><td><input class="field"></td><td><input class="field"></td><td class="action-cell"><button type="button" class="mini-btn" onclick="rowMove(this,-1)">▲</button><button type="button" class="mini-btn" onclick="rowMove(this,1)">▼</button><button type="button" class="mini-btn del" onclick="rowDelete(this)">🗑</button></td></tr>
+      <tr><td><input class="field year-input" value="2025"></td><td><input class="field"></td><td><input class="field"></td><td class="action-cell"><button type="button" class="mini-btn" onclick="rowMove(this,-1)">▲</button><button type="button" class="mini-btn" onclick="rowMove(this,1)">▼</button><button type="button" class="mini-btn del" onclick="rowDelete(this)">🗑</button></td></tr>
+    </table>
+    </div>
+    <div class="reset-row" style="text-align:left;margin-top:8px;">
+      <span class="addrow-btn" onclick="addSimpleRow('auditFeeTable',2)">+ 加一行</span>
+    </div>
+
+    <h2 class="section-title">12. 借贷 & 薪酬</h2>
+    <div class="table-scroll">
+    <table class="datatable" id="loanTable">
+      <tr><th>Year</th><th>Total Bank Borrowing (HP)</th><th>Bank Interest</th><th>Director Remuneration</th><th>LLP Partners Salaries</th><th class="action-header">操作</th></tr>
+      <tr><td><input class="field year-input" value="2024"></td><td><input class="field"></td><td><input class="field"></td><td><input class="field"></td><td><input class="field"></td><td class="action-cell"><button type="button" class="mini-btn" onclick="rowMove(this,-1)">▲</button><button type="button" class="mini-btn" onclick="rowMove(this,1)">▼</button><button type="button" class="mini-btn del" onclick="rowDelete(this)">🗑</button></td></tr>
+      <tr><td><input class="field year-input" value="2025"></td><td><input class="field"></td><td><input class="field"></td><td><input class="field"></td><td><input class="field"></td><td class="action-cell"><button type="button" class="mini-btn" onclick="rowMove(this,-1)">▲</button><button type="button" class="mini-btn" onclick="rowMove(this,1)">▼</button><button type="button" class="mini-btn del" onclick="rowDelete(this)">🗑</button></td></tr>
+    </table>
+    </div>
+    <div class="reset-row" style="text-align:left;margin-top:8px;">
+      <span class="addrow-btn" onclick="addSimpleRow('loanTable',4)">+ 加一行</span>
+    </div>
+
+    <h2 class="section-title">13. 资产 & 负债</h2>
+    <div class="table-scroll">
+    <table class="datatable" id="assetTable">
+      <tr><th>Year</th><th>Total Asset</th><th>Total Liabilities</th><th>WIP（如适用）</th><th class="action-header">操作</th></tr>
+      <tr><td><input class="field year-input" value="2024"></td><td><input class="field"></td><td><input class="field"></td><td><input class="field"></td><td class="action-cell"><button type="button" class="mini-btn" onclick="rowMove(this,-1)">▲</button><button type="button" class="mini-btn" onclick="rowMove(this,1)">▼</button><button type="button" class="mini-btn del" onclick="rowDelete(this)">🗑</button></td></tr>
+      <tr><td><input class="field year-input" value="2025"></td><td><input class="field"></td><td><input class="field"></td><td><input class="field"></td><td class="action-cell"><button type="button" class="mini-btn" onclick="rowMove(this,-1)">▲</button><button type="button" class="mini-btn" onclick="rowMove(this,1)">▼</button><button type="button" class="mini-btn del" onclick="rowDelete(this)">🗑</button></td></tr>
+    </table>
+    </div>
+    <div class="reset-row" style="text-align:left;margin-top:8px;">
+      <span class="addrow-btn" onclick="addSimpleRow('assetTable',3)">+ 加一行</span>
+    </div>
+
+    <h2 class="section-title">客户的疑问 / 挑战</h2>
+    <textarea class="field" rows="3" id="c-enquiry"></textarea>
+
+    <h2 class="section-title">出席人数（Directors & Shareholders）</h2>
+    <div class="table-scroll">
+    <table class="datatable" id="attendTable">
+      <tr><th>Name</th><th>Position</th><th>% Shareholding</th><th>Attendance</th><th class="action-header">操作</th></tr>
+      <tr><td><input class="field"></td><td><input class="field"></td><td><input class="field"></td><td><input class="field" placeholder="Yes / No"></td><td class="action-cell"><button type="button" class="mini-btn" onclick="rowMove(this,-1)">▲</button><button type="button" class="mini-btn" onclick="rowMove(this,1)">▼</button><button type="button" class="mini-btn del" onclick="rowDelete(this)">🗑</button></td></tr>
+      <tr><td><input class="field"></td><td><input class="field"></td><td><input class="field"></td><td><input class="field" placeholder="Yes / No"></td><td class="action-cell"><button type="button" class="mini-btn" onclick="rowMove(this,-1)">▲</button><button type="button" class="mini-btn" onclick="rowMove(this,1)">▼</button><button type="button" class="mini-btn del" onclick="rowDelete(this)">🗑</button></td></tr>
+    </table>
+    </div>
+    <div class="reset-row" style="text-align:left;margin-top:8px;">
+      <span class="addrow-btn" onclick="addAttendRow()">+ 加一行</span>
+    </div>
+  </div>
+
+  <!-- PANE 5: Questionaire -->
+  <div class="pane" id="pane5">
+    <div class="print-row"><span class="print-btn" onclick="window.print()">🖨️ 打印 / 下载 PDF</span><span class="export-btn" onclick="exportQuestionnaireTxt()">⬇ 只导出访谈问题</span><span class="export-btn" onclick="exportClientRecord()">💾 保存客户资料（含访谈问题）</span></div>
+    <div class="progress-wrap" id="prog6wrap">
+      <div class="progress-bar"><div class="progress-fill" id="prog6fill"></div></div>
+      <div class="progress-label" id="prog6label">0 / 18</div>
+    </div>
+    <div class="reset-row"><span class="reset-btn" onclick="resetSection('s6')">重置本页勾选</span></div>
+    <h2 class="section-title">访谈时可以问的问题</h2>
+    <div class="checklist" data-section="s6">
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-1"><div class="txt"><span class="num">1.</span>Business Nature 详细内容</div></div><input class="note-field" data-note-id="s6-1" placeholder="客户回答 / 记录..."></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-2"><div class="txt"><span class="num">2.</span>何时开始创业</div></div><input class="note-field" data-note-id="s6-2" placeholder="客户回答 / 记录..."></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-3"><div class="txt"><span class="num">3.</span>哪个服务/产品带来最高利润</div></div><input class="note-field" data-note-id="s6-3" placeholder="客户回答 / 记录..."></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-4"><div class="txt"><span class="num">4.</span>是B2B还是B2C</div></div><input class="note-field" data-note-id="s6-4" placeholder="客户回答 / 记录..."></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-5"><div class="txt"><span class="num">5.</span>有多少主要客户（多少新销售/回购销售）</div></div><input class="note-field" data-note-id="s6-5" placeholder="客户回答 / 记录..."></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-6"><div class="txt"><span class="num">6.</span>有销售与市场团队吗？sales person 月目标多少</div></div><input class="note-field" data-note-id="s6-6" placeholder="客户回答 / 记录..."></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-7"><div class="txt"><span class="num">7.</span>2025营收 / 2026营收（on track？）</div></div><input class="note-field" data-note-id="s6-7" placeholder="客户回答 / 记录..."></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-8"><div class="txt"><span class="num">8.</span>有多少 SKU</div></div><input class="note-field" data-note-id="s6-8" placeholder="客户回答 / 记录..."></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-9"><div class="txt"><span class="num">9.</span>老板知道哪个产品利润率最高，多少百分比</div></div><input class="note-field" data-note-id="s6-9" placeholder="客户回答 / 记录..."></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-10"><div class="txt"><span class="num">10.</span>老板的工作范畴</div></div><input class="note-field" data-note-id="s6-10" placeholder="客户回答 / 记录..."></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-11"><div class="txt"><span class="num">11.</span>老板比较喜欢哪部分（strength）</div></div><input class="note-field" data-note-id="s6-11" placeholder="客户回答 / 记录..."></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-12"><div class="txt"><span class="num">12.</span>老板比较不喜欢哪部分（有能力做，但需花很多精力）</div></div><input class="note-field" data-note-id="s6-12" placeholder="客户回答 / 记录..."></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-13"><div class="txt"><span class="num">13.</span>有多少股东</div></div><input class="note-field" data-note-id="s6-13" placeholder="客户回答 / 记录..."></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-14"><div class="txt"><span class="num">14.</span>有做 review account 吗（多久一次）</div></div><input class="note-field" data-note-id="s6-14" placeholder="客户回答 / 记录..."></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-15"><div class="txt"><span class="num">15.</span>每月固定支出承诺</div></div><input class="note-field" data-note-id="s6-15" placeholder="客户回答 / 记录..."></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-16"><div class="txt"><span class="num">16.</span>员工人数</div></div><input class="note-field" data-note-id="s6-16" placeholder="客户回答 / 记录..."></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-17"><div class="txt"><span class="num">17.</span>客户参加此次session的目的 / 期望 / Aladin</div></div><input class="note-field" data-note-id="s6-17" placeholder="客户回答 / 记录..."></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-18"><div class="txt"><span class="num">18.</span>（第6项在原文件中重复，供参考）</div></div><input class="note-field" data-note-id="s6-18" placeholder="客户回答 / 记录..."></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast">已复制</div>
+
+<script>
+  var STORE_KEY = 'wsad_checklist_state_v1';
+
+  function loadState(){
+    try{ return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; }catch(e){ return {}; }
+  }
+  function saveState(state){
+    localStorage.setItem(STORE_KEY, JSON.stringify(state));
+  }
+
+  function updateProgress(section){
+    var boxes = document.querySelectorAll('.checklist[data-section="'+section+'"] input[type="checkbox"]');
+    var total = boxes.length, checked = 0;
+    boxes.forEach(function(b){ if(b.checked) checked++; });
+    var fill = document.getElementById('prog'+section.replace('s','')+'fill');
+    var label = document.getElementById('prog'+section.replace('s','')+'label');
+    if(fill) fill.style.width = (total? (checked/total*100):0) + '%';
+    if(label) label.textContent = checked + ' / ' + total;
+  }
+
+  function initChecklists(){
+    var state = loadState();
+    document.querySelectorAll('.checklist input[type="checkbox"]').forEach(function(box){
+      var id = box.getAttribute('data-id');
+      if(state[id]){
+        box.checked = true;
+        box.closest('.check-item').classList.add('checked');
+      }
+      box.addEventListener('change', function(){
+        var st = loadState();
+        st[id] = box.checked;
+        saveState(st);
+        box.closest('.check-item').classList.toggle('checked', box.checked);
+        var section = box.closest('.checklist').getAttribute('data-section');
+        updateProgress(section);
+      });
+    });
+    ['s2','s3','s6'].forEach(updateProgress);
+  }
+
+  function resetSection(section){
+    if(!confirm('确定要重置这一页的所有勾选吗？')) return;
+    var state = loadState();
+    document.querySelectorAll('.checklist[data-section="'+section+'"] input[type="checkbox"]').forEach(function(box){
+      box.checked = false;
+      box.closest('.check-item').classList.remove('checked');
+      delete state[box.getAttribute('data-id')];
+    });
+    saveState(state);
+    updateProgress(section);
+  }
+
+  function copyWA(){
+    var box = document.getElementById('waBox');
+    box.select();
+    box.setSelectionRange(0, 999999);
+    var done = function(){
+      var t = document.getElementById('toast');
+      t.classList.add('show');
+      setTimeout(function(){ t.classList.remove('show'); }, 1500);
+    };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(box.value).then(done).catch(function(){ document.execCommand('copy'); done(); });
+    } else {
+      document.execCommand('copy');
+      done();
+    }
+  }
+
+  function rowActionsHTML(){
+    return '<button type="button" class="mini-btn" onclick="rowMove(this,-1)">▲</button>'+
+           '<button type="button" class="mini-btn" onclick="rowMove(this,1)">▼</button>'+
+           '<button type="button" class="mini-btn del" onclick="rowDelete(this)">🗑</button>';
+  }
+
+  function rowMove(btn, dir){
+    var tr = btn.closest('tr');
+    var table = tr.closest('table');
+    var idx = tr.rowIndex; // 0 = header row
+    var targetIdx = idx + dir;
+    if(targetIdx < 1 || targetIdx >= table.rows.length) return;
+    var targetRow = table.rows[targetIdx];
+    if(dir < 0){
+      tr.parentNode.insertBefore(tr, targetRow);
+    } else {
+      tr.parentNode.insertBefore(targetRow, tr);
+    }
+  }
+
+  function rowDelete(btn){
+    var tr = btn.closest('tr');
+    if(!confirm('删除这一行？')) return;
+    tr.remove();
+  }
+
+  function addRevRow(){
+    var table = document.getElementById('revTable');
+    var row = table.insertRow(-1);
+    row.insertCell(0).innerHTML = '<input class="field year-input" placeholder="Year">';
+    row.insertCell(1).innerHTML = '<input class="field rev-input" data-k="rev">';
+    row.insertCell(2).innerHTML = '<input class="field rev-input" data-k="gp">';
+    var gpmCell = row.insertCell(3); gpmCell.className = 'gpm'; gpmCell.textContent = '–';
+    row.insertCell(4).innerHTML = '<input class="field rev-input" data-k="pat">';
+    var patmCell = row.insertCell(5); patmCell.className = 'patm'; patmCell.textContent = '–';
+    row.insertCell(6).innerHTML = rowActionsHTML();
+  }
+
+  function addSimpleRow(tableId, numCols, placeholders, col0Placeholder){
+    var table = document.getElementById(tableId);
+    var row = table.insertRow(-1);
+    row.insertCell(0).innerHTML = '<input class="field year-input" placeholder="'+(col0Placeholder||'Year')+'">';
+    for(var i=1;i<=numCols;i++){
+      var ph = (placeholders && placeholders[i-1]) ? ' placeholder="'+placeholders[i-1]+'"' : '';
+      row.insertCell(i).innerHTML = '<input class="field"'+ph+'>';
+    }
+    row.insertCell(-1).innerHTML = rowActionsHTML();
+  }
+
+  function addAttendRow(){
+    addSimpleRow('attendTable', 3, [null, null, 'Yes / No'], 'Name');
+  }
+
+  function attachMarginCalc(){
+    document.addEventListener('input', function(e){
+      if(!e.target.classList || !e.target.classList.contains('rev-input')) return;
+      var tr = e.target.closest('tr');
+      var rev = parseFloat((tr.querySelector('[data-k="rev"]')||{}).value) || 0;
+      var gp = parseFloat((tr.querySelector('[data-k="gp"]')||{}).value) || 0;
+      var pat = parseFloat((tr.querySelector('[data-k="pat"]')||{}).value) || 0;
+      var gpm = tr.querySelector('.gpm');
+      var patm = tr.querySelector('.patm');
+      if(gpm) gpm.textContent = rev ? (gp/rev*100).toFixed(1)+'%' : '–';
+      if(patm) patm.textContent = rev ? (pat/rev*100).toFixed(1)+'%' : '–';
+    });
+  }
+
+  var NOTE_KEY = 'wsad_checklist_notes_v1';
+
+  function loadNotes(){
+    try{ return JSON.parse(localStorage.getItem(NOTE_KEY)) || {}; }catch(e){ return {}; }
+  }
+  function saveNotes(notes){
+    localStorage.setItem(NOTE_KEY, JSON.stringify(notes));
+  }
+  function initNoteFields(){
+    var notes = loadNotes();
+    document.querySelectorAll('.note-field').forEach(function(inp){
+      var id = inp.getAttribute('data-note-id');
+      if(notes[id]) inp.value = notes[id];
+      inp.addEventListener('input', function(){
+        var n = loadNotes();
+        n[id] = inp.value;
+        saveNotes(n);
+      });
+    });
+  }
+
+  function exportQuestionnaireTxt(){
+    var lines = ['WSA 121 访谈问题 & 客户回答记录', '========================================', ''];
+    document.querySelectorAll('.checklist[data-section="s6"] .check-item').forEach(function(item){
+      var box = item.querySelector('input[type="checkbox"]');
+      var txt = item.querySelector('.txt').textContent.trim();
+      var note = item.querySelector('.note-field');
+      var mark = box && box.checked ? '[已问]' : '[未问]';
+      lines.push(mark + ' ' + txt);
+      lines.push('客户回答：' + (note && note.value ? note.value : ''));
+      lines.push('');
+    });
+    var blob = new Blob([lines.join('\n')], {type:'text/plain;charset=utf-8'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'WSA121_访谈问题记录_' + new Date().toISOString().slice(0,10) + '.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function sanitizeFilename(name){
+    return (name || '未命名客户').trim().replace(/[\\\/:*?"<>|]/g, '_').replace(/\s+/g,'_').slice(0,80) || '未命名客户';
+  }
+
+  function getFieldRows(){
+    var lines = [];
+    document.querySelectorAll('#pane4 .field-row').forEach(function(row){
+      var label = row.querySelector('label').textContent.trim();
+      var inp = row.querySelector('input, textarea');
+      lines.push(label + '：' + (inp ? inp.value : ''));
+    });
+    return lines;
+  }
+
+  function getTableText(tableId){
+    var table = document.getElementById(tableId);
+    if(!table) return [];
+    var lines = [];
+    for(var i=0;i<table.rows.length;i++){
+      var row = table.rows[i];
+      var vals = [];
+      for(var j=0;j<row.cells.length;j++){
+        var cell = row.cells[j];
+        if(cell.classList.contains('action-cell') || cell.classList.contains('action-header')) continue;
+        var inp = cell.querySelector('input');
+        if(inp){ vals.push(inp.value || ''); }
+        else { vals.push(cell.textContent.trim()); }
+      }
+      lines.push(vals.join(' | '));
+    }
+    return lines;
+  }
+
+  function downloadText(filename, content){
+    var blob = new Blob([content], {type:'text/plain;charset=utf-8'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function exportClientRecord(){
+    var companyInp = document.getElementById('c-company');
+    var company = companyInp ? companyInp.value : '';
+    var lines = [];
+    lines.push('WSA121 客户完整记录 Client Full Record');
+    lines.push('公司名称：' + (company || '（未填写）'));
+    lines.push('导出时间：' + new Date().toLocaleString('zh-CN'));
+    lines.push('========================================');
+    lines.push('');
+    lines.push('【客户资料 Summary of Client】');
+    lines = lines.concat(getFieldRows());
+    lines.push('');
+    lines.push('营收 & 利润 Revenue & Profit：');
+    lines = lines.concat(getTableText('revTable'));
+    lines.push('');
+    lines.push('Audit Fee：');
+    lines = lines.concat(getTableText('auditFeeTable'));
+    lines.push('');
+    lines.push('借贷 & 薪酬：');
+    lines = lines.concat(getTableText('loanTable'));
+    lines.push('');
+    lines.push('资产 & 负债：');
+    lines = lines.concat(getTableText('assetTable'));
+    lines.push('');
+    var enquiryEl = document.getElementById('c-enquiry');
+    lines.push('客户的疑问 / 挑战：');
+    lines.push(enquiryEl ? enquiryEl.value : '');
+    lines.push('');
+    lines.push('出席人数 Attendance：');
+    lines = lines.concat(getTableText('attendTable'));
+    lines.push('');
+    lines.push('========================================');
+    lines.push('【访谈问题记录 WSA Questionaire】');
+    lines.push('');
+    document.querySelectorAll('.checklist[data-section="s6"] .check-item').forEach(function(item){
+      var box = item.querySelector('input[type="checkbox"]');
+      var txt = item.querySelector('.txt').textContent.trim();
+      var note = item.querySelector('.note-field');
+      var mark = box && box.checked ? '[已问]' : '[未问]';
+      lines.push(mark + ' ' + txt);
+      lines.push('客户回答：' + (note && note.value ? note.value : ''));
+      lines.push('');
+    });
+
+    downloadText(sanitizeFilename(company) + '.txt', lines.join('\n'));
+  }
+
+  initChecklists();
+  initNoteFields();
+  attachMarginCalc();
+</script>
+
+</body>
+</html>
