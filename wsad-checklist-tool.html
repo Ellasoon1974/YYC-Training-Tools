@@ -55,7 +55,7 @@
     cursor:pointer;
     border-bottom:3px solid transparent;
   }
-  .pane{display:none;padding:16px 16px 40px;max-width:720px;margin:0 auto;}
+  .pane{display:none;padding:16px 24px 40px;max-width:1000px;margin:0 auto;}
   #tab1:checked ~ .tabbar label[for="tab1"],
   #tab2:checked ~ .tabbar label[for="tab2"],
   #tab3:checked ~ .tabbar label[for="tab3"],
@@ -112,16 +112,20 @@
   .check-item.checked{background:var(--green-soft);border-color:#cfe9d6;}
   .check-item .num{font-weight:800;color:var(--navy);margin-right:4px;}
   .check-item.checked .txt{color:#5a6270;text-decoration:line-through;}
+  .txt .lang-sub{display:block;font-size:11.5px;font-weight:400;color:var(--sub);margin-top:2px;line-height:1.5;}
   .note-field{
     display:block;
     width:100%;
     margin-top:8px;
     border:1px solid var(--border);
-    border-radius:6px;
-    padding:6px 9px;
-    font-size:12.5px;
+    border-radius:8px;
+    padding:12px 14px;
+    font-size:14.5px;
     font-family:inherit;
     background:#f9fafc;
+    min-height:64px;
+    resize:vertical;
+    line-height:1.5;
   }
 
   .reset-btn, .copy-btn, .addrow-btn{
@@ -194,8 +198,8 @@
     width:100%;
     border:1px solid var(--border);
     border-radius:8px;
-    padding:8px 10px;
-    font-size:13.5px;
+    padding:12px 14px;
+    font-size:15px;
     font-family:inherit;
     background:#fff;
   }
@@ -232,6 +236,7 @@
     border-radius:8px;
     cursor:pointer;
   }
+
   .export-btn{
     display:inline-block;
     font-size:12.5px;
@@ -245,11 +250,29 @@
     margin-left:8px;
   }
 
+  .print-select-bar{
+    background:#f5f8fc;
+    border-bottom:1px solid var(--border);
+    padding:10px 16px;
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:8px 14px;
+    font-size:12.5px;
+  }
+  .print-select-bar .psb-label{font-weight:700;color:var(--navy);margin-right:2px;}
+  .print-select-bar label{display:inline-flex;align-items:center;gap:4px;color:var(--text);cursor:pointer;}
+  .print-select-bar input[type="checkbox"]{width:15px;height:15px;accent-color:var(--navy);}
+  .print-select-bar .print-btn{margin-left:auto;}
+
   @media print{
     .tabbar, .back, .print-btn, .export-btn, .reset-btn, .copy-btn, .addrow-btn,
-    .mini-btn, .action-cell, th.action-header, .toast{
+    .mini-btn, .action-cell, th.action-header, .toast, .print-select-bar{
       display:none !important;
     }
+    body.print-multi .pane{display:none !important;}
+    body.print-multi .pane.print-include{display:block !important;page-break-after:always;}
+    body.print-multi .pane.print-include.print-last{page-break-after:auto;}
     body{background:#fff;padding:0;font-size:10.5px;}
     .header{background:#fff !important;color:#000 !important;padding:0 0 6px;text-align:left;}
     .header h1{font-size:15px;}
@@ -259,6 +282,8 @@
     .progress-wrap{padding:5px 8px;margin-bottom:6px;}
     .progress-label{font-size:9.5px;}
     .checklist{column-count:2;column-gap:12px;}
+    .checklist[data-section="s6"]{column-count:1;}
+    .checklist[data-section="s6"] .check-item:nth-child(9){page-break-after:always;break-after:page;}
     .check-item{
       break-inside:avoid;
       padding:5px 8px;
@@ -276,8 +301,21 @@
     .field-row label{font-size:9px;margin-bottom:1px;}
     input.field, textarea.field{padding:3px 5px;font-size:9.5px;}
     textarea.wa-box{min-height:150px;font-size:9.5px;padding:8px;line-height:1.4;}
+
+    /* Fit the client summary sheet (pane4) on exactly one A4 page */
+    #pane4{font-size:8px;}
+    #pane4 h2.section-title{font-size:9.5px;margin:5px 0 3px;padding-bottom:2px;}
+    #pane4 > p{margin:1px 0 4px;font-size:7.5px;}
+    #pane4 .field-row{margin-bottom:2px;}
+    #pane4 .field-row label{font-size:7.5px;margin-bottom:0;}
+    #pane4 input.field, #pane4 textarea.field{padding:2px 4px;font-size:8px;min-height:0;}
+    #pane4 textarea.field[rows]{height:20px;}
+    #pane4 table.datatable{font-size:7px;margin-top:2px;}
+    #pane4 table.datatable td, #pane4 table.datatable th{padding:1px 3px;}
+    #pane4 .reset-row{margin-bottom:3px;margin-top:2px !important;}
+    #pane4 .table-scroll{overflow:visible;}
   }
-  @page{size:A4;margin:12mm;}
+  @page{size:A4;margin:10mm 8mm;}
 </style>
 </head>
 <body>
@@ -302,11 +340,20 @@
   <label class="tab-btn" for="tab5">访谈问题</label>
 </div>
 
+<div class="print-select-bar">
+  <span class="psb-label">选择要一起打印/下载的页面：</span>
+  <label><input type="checkbox" class="print-page-chk" value="pane1" checked>准备清单</label>
+  <label><input type="checkbox" class="print-page-chk" value="pane2" checked>文件清单</label>
+  <label><input type="checkbox" class="print-page-chk" value="pane3" checked>WhatsApp模板</label>
+  <label><input type="checkbox" class="print-page-chk" value="pane4" checked>客户资料表</label>
+  <label><input type="checkbox" class="print-page-chk" value="pane5" checked>访谈问题</label>
+  <span class="print-btn" onclick="printSelectedPages()">🖨️ 一键打印 / 下载已选页面</span>
+</div>
+
 <div class="content">
 
   <!-- PANE 1: READ ME WSA Demo -->
   <div class="pane" id="pane1">
-    <div class="print-row"><span class="print-btn" onclick="window.print()">🖨️ 打印 / 下载 PDF</span></div>
     <div class="progress-wrap" id="prog2wrap">
       <div class="progress-bar"><div class="progress-fill" id="prog2fill"></div></div>
       <div class="progress-label" id="prog2label">0 / 20</div>
@@ -348,7 +395,6 @@
 
   <!-- PANE 2: WSAD Checklist -->
   <div class="pane" id="pane2">
-    <div class="print-row"><span class="print-btn" onclick="window.print()">🖨️ 打印 / 下载 PDF</span></div>
     <div class="progress-wrap" id="prog3wrap">
       <div class="progress-bar"><div class="progress-fill" id="prog3fill"></div></div>
       <div class="progress-label" id="prog3label">0 / 27</div>
@@ -400,7 +446,6 @@
 
   <!-- PANE 3: WhatsApp Template -->
   <div class="pane" id="pane3">
-    <div class="print-row"><span class="print-btn" onclick="window.print()">🖨️ 打印 / 下载 PDF</span></div>
     <h2 class="section-title">WhatsApp 邀约模板</h2>
     <p style="font-size:12.5px;color:var(--sub);margin-top:-4px;">现场咨询（YYC HQ）· 编辑后点击复制，直接贴到 WhatsApp</p>
     <textarea class="wa-box" id="waBox">Agenda：
@@ -434,7 +479,7 @@ Proposed Venue：YYC HQ
 
   <!-- PANE 4: Summary of Client -->
   <div class="pane" id="pane4">
-    <div class="print-row"><span class="print-btn" onclick="window.print()">🖨️ 打印 / 下载 PDF</span><span class="export-btn" onclick="exportClientRecord()">💾 保存客户资料（含访谈问题）</span></div>
+    <div class="print-row"><span class="export-btn" onclick="exportClientRecord()">💾 保存客户资料（含访谈问题）</span></div>
     <h2 class="section-title">WSA121 / WSAD 客户资料表 Summary</h2>
     <p style="font-size:12.5px;color:var(--sub);margin-top:-4px;">Subject: WSA 121 Consultation / WSAD Session</p>
 
@@ -481,36 +526,36 @@ Proposed Venue：YYC HQ
     <div class="table-scroll">
     <table class="datatable" id="auditFeeTable">
       <tr><th>Year</th><th>Existing audit fee</th><th>YYC Audit fee</th><th class="action-header">操作</th></tr>
-      <tr><td><input class="field year-input" value="2024"></td><td><input class="field"></td><td><input class="field"></td><td class="action-cell"><button type="button" class="mini-btn" onclick="rowMove(this,-1)">▲</button><button type="button" class="mini-btn" onclick="rowMove(this,1)">▼</button><button type="button" class="mini-btn del" onclick="rowDelete(this)">🗑</button></td></tr>
-      <tr><td><input class="field year-input" value="2025"></td><td><input class="field"></td><td><input class="field"></td><td class="action-cell"><button type="button" class="mini-btn" onclick="rowMove(this,-1)">▲</button><button type="button" class="mini-btn" onclick="rowMove(this,1)">▼</button><button type="button" class="mini-btn del" onclick="rowDelete(this)">🗑</button></td></tr>
+      <tr><td><input class="field year-input" value="2024"></td><td><input class="field num-input"></td><td><input class="field num-input"></td><td class="action-cell"><button type="button" class="mini-btn" onclick="rowMove(this,-1)">▲</button><button type="button" class="mini-btn" onclick="rowMove(this,1)">▼</button><button type="button" class="mini-btn del" onclick="rowDelete(this)">🗑</button></td></tr>
+      <tr><td><input class="field year-input" value="2025"></td><td><input class="field num-input"></td><td><input class="field num-input"></td><td class="action-cell"><button type="button" class="mini-btn" onclick="rowMove(this,-1)">▲</button><button type="button" class="mini-btn" onclick="rowMove(this,1)">▼</button><button type="button" class="mini-btn del" onclick="rowDelete(this)">🗑</button></td></tr>
     </table>
     </div>
     <div class="reset-row" style="text-align:left;margin-top:8px;">
-      <span class="addrow-btn" onclick="addSimpleRow('auditFeeTable',2)">+ 加一行</span>
+      <span class="addrow-btn" onclick="addSimpleRow('auditFeeTable',2,null,null,[true,true])">+ 加一行</span>
     </div>
 
     <h2 class="section-title">12. 借贷 & 薪酬</h2>
     <div class="table-scroll">
     <table class="datatable" id="loanTable">
       <tr><th>Year</th><th>Total Bank Borrowing (HP)</th><th>Bank Interest</th><th>Director Remuneration</th><th>LLP Partners Salaries</th><th class="action-header">操作</th></tr>
-      <tr><td><input class="field year-input" value="2024"></td><td><input class="field"></td><td><input class="field"></td><td><input class="field"></td><td><input class="field"></td><td class="action-cell"><button type="button" class="mini-btn" onclick="rowMove(this,-1)">▲</button><button type="button" class="mini-btn" onclick="rowMove(this,1)">▼</button><button type="button" class="mini-btn del" onclick="rowDelete(this)">🗑</button></td></tr>
-      <tr><td><input class="field year-input" value="2025"></td><td><input class="field"></td><td><input class="field"></td><td><input class="field"></td><td><input class="field"></td><td class="action-cell"><button type="button" class="mini-btn" onclick="rowMove(this,-1)">▲</button><button type="button" class="mini-btn" onclick="rowMove(this,1)">▼</button><button type="button" class="mini-btn del" onclick="rowDelete(this)">🗑</button></td></tr>
+      <tr><td><input class="field year-input" value="2024"></td><td><input class="field num-input"></td><td><input class="field num-input"></td><td><input class="field num-input"></td><td><input class="field num-input"></td><td class="action-cell"><button type="button" class="mini-btn" onclick="rowMove(this,-1)">▲</button><button type="button" class="mini-btn" onclick="rowMove(this,1)">▼</button><button type="button" class="mini-btn del" onclick="rowDelete(this)">🗑</button></td></tr>
+      <tr><td><input class="field year-input" value="2025"></td><td><input class="field num-input"></td><td><input class="field num-input"></td><td><input class="field num-input"></td><td><input class="field num-input"></td><td class="action-cell"><button type="button" class="mini-btn" onclick="rowMove(this,-1)">▲</button><button type="button" class="mini-btn" onclick="rowMove(this,1)">▼</button><button type="button" class="mini-btn del" onclick="rowDelete(this)">🗑</button></td></tr>
     </table>
     </div>
     <div class="reset-row" style="text-align:left;margin-top:8px;">
-      <span class="addrow-btn" onclick="addSimpleRow('loanTable',4)">+ 加一行</span>
+      <span class="addrow-btn" onclick="addSimpleRow('loanTable',4,null,null,[true,true,true,true])">+ 加一行</span>
     </div>
 
     <h2 class="section-title">13. 资产 & 负债</h2>
     <div class="table-scroll">
     <table class="datatable" id="assetTable">
       <tr><th>Year</th><th>Total Asset</th><th>Total Liabilities</th><th>WIP（如适用）</th><th class="action-header">操作</th></tr>
-      <tr><td><input class="field year-input" value="2024"></td><td><input class="field"></td><td><input class="field"></td><td><input class="field"></td><td class="action-cell"><button type="button" class="mini-btn" onclick="rowMove(this,-1)">▲</button><button type="button" class="mini-btn" onclick="rowMove(this,1)">▼</button><button type="button" class="mini-btn del" onclick="rowDelete(this)">🗑</button></td></tr>
-      <tr><td><input class="field year-input" value="2025"></td><td><input class="field"></td><td><input class="field"></td><td><input class="field"></td><td class="action-cell"><button type="button" class="mini-btn" onclick="rowMove(this,-1)">▲</button><button type="button" class="mini-btn" onclick="rowMove(this,1)">▼</button><button type="button" class="mini-btn del" onclick="rowDelete(this)">🗑</button></td></tr>
+      <tr><td><input class="field year-input" value="2024"></td><td><input class="field num-input"></td><td><input class="field num-input"></td><td><input class="field num-input"></td><td class="action-cell"><button type="button" class="mini-btn" onclick="rowMove(this,-1)">▲</button><button type="button" class="mini-btn" onclick="rowMove(this,1)">▼</button><button type="button" class="mini-btn del" onclick="rowDelete(this)">🗑</button></td></tr>
+      <tr><td><input class="field year-input" value="2025"></td><td><input class="field num-input"></td><td><input class="field num-input"></td><td><input class="field num-input"></td><td class="action-cell"><button type="button" class="mini-btn" onclick="rowMove(this,-1)">▲</button><button type="button" class="mini-btn" onclick="rowMove(this,1)">▼</button><button type="button" class="mini-btn del" onclick="rowDelete(this)">🗑</button></td></tr>
     </table>
     </div>
     <div class="reset-row" style="text-align:left;margin-top:8px;">
-      <span class="addrow-btn" onclick="addSimpleRow('assetTable',3)">+ 加一行</span>
+      <span class="addrow-btn" onclick="addSimpleRow('assetTable',3,null,null,[true,true,true])">+ 加一行</span>
     </div>
 
     <h2 class="section-title">客户的疑问 / 挑战</h2>
@@ -519,9 +564,9 @@ Proposed Venue：YYC HQ
     <h2 class="section-title">出席人数（Directors & Shareholders）</h2>
     <div class="table-scroll">
     <table class="datatable" id="attendTable">
-      <tr><th>Name</th><th>Position</th><th>% Shareholding</th><th>Attendance</th><th class="action-header">操作</th></tr>
-      <tr><td><input class="field"></td><td><input class="field"></td><td><input class="field"></td><td><input class="field" placeholder="Yes / No"></td><td class="action-cell"><button type="button" class="mini-btn" onclick="rowMove(this,-1)">▲</button><button type="button" class="mini-btn" onclick="rowMove(this,1)">▼</button><button type="button" class="mini-btn del" onclick="rowDelete(this)">🗑</button></td></tr>
-      <tr><td><input class="field"></td><td><input class="field"></td><td><input class="field"></td><td><input class="field" placeholder="Yes / No"></td><td class="action-cell"><button type="button" class="mini-btn" onclick="rowMove(this,-1)">▲</button><button type="button" class="mini-btn" onclick="rowMove(this,1)">▼</button><button type="button" class="mini-btn del" onclick="rowDelete(this)">🗑</button></td></tr>
+      <tr><th>Name</th><th>Position</th><th>Direct Interest</th><th>Share Capital</th><th>% Shareholding</th><th>Attendance</th><th class="action-header">操作</th></tr>
+      <tr><td><input class="field"></td><td><input class="field"></td><td><input class="field num-input" data-k="di"></td><td><input class="field num-input" data-k="sc"></td><td class="sharepct">–</td><td><input class="field" placeholder="Yes / No"></td><td class="action-cell"><button type="button" class="mini-btn" onclick="rowMove(this,-1)">▲</button><button type="button" class="mini-btn" onclick="rowMove(this,1)">▼</button><button type="button" class="mini-btn del" onclick="rowDelete(this)">🗑</button></td></tr>
+      <tr><td><input class="field"></td><td><input class="field"></td><td><input class="field num-input" data-k="di"></td><td><input class="field num-input" data-k="sc"></td><td class="sharepct">–</td><td><input class="field" placeholder="Yes / No"></td><td class="action-cell"><button type="button" class="mini-btn" onclick="rowMove(this,-1)">▲</button><button type="button" class="mini-btn" onclick="rowMove(this,1)">▼</button><button type="button" class="mini-btn del" onclick="rowDelete(this)">🗑</button></td></tr>
     </table>
     </div>
     <div class="reset-row" style="text-align:left;margin-top:8px;">
@@ -531,7 +576,7 @@ Proposed Venue：YYC HQ
 
   <!-- PANE 5: Questionaire -->
   <div class="pane" id="pane5">
-    <div class="print-row"><span class="print-btn" onclick="window.print()">🖨️ 打印 / 下载 PDF</span><span class="export-btn" onclick="exportQuestionnaireTxt()">⬇ 只导出访谈问题</span><span class="export-btn" onclick="exportClientRecord()">💾 保存客户资料（含访谈问题）</span></div>
+    <div class="print-row"><span class="export-btn" onclick="exportQuestionnaireTxt()">⬇ 只导出访谈问题</span><span class="export-btn" onclick="exportClientRecord()">💾 保存客户资料（含访谈问题）</span></div>
     <div class="progress-wrap" id="prog6wrap">
       <div class="progress-bar"><div class="progress-fill" id="prog6fill"></div></div>
       <div class="progress-label" id="prog6label">0 / 18</div>
@@ -539,24 +584,24 @@ Proposed Venue：YYC HQ
     <div class="reset-row"><span class="reset-btn" onclick="resetSection('s6')">重置本页勾选</span></div>
     <h2 class="section-title">访谈时可以问的问题</h2>
     <div class="checklist" data-section="s6">
-      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-1"><div class="txt"><span class="num">1.</span>Business Nature 详细内容</div></div><input class="note-field" data-note-id="s6-1" placeholder="客户回答 / 记录..."></div>
-      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-2"><div class="txt"><span class="num">2.</span>何时开始创业</div></div><input class="note-field" data-note-id="s6-2" placeholder="客户回答 / 记录..."></div>
-      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-3"><div class="txt"><span class="num">3.</span>哪个服务/产品带来最高利润</div></div><input class="note-field" data-note-id="s6-3" placeholder="客户回答 / 记录..."></div>
-      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-4"><div class="txt"><span class="num">4.</span>是B2B还是B2C</div></div><input class="note-field" data-note-id="s6-4" placeholder="客户回答 / 记录..."></div>
-      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-5"><div class="txt"><span class="num">5.</span>有多少主要客户（多少新销售/回购销售）</div></div><input class="note-field" data-note-id="s6-5" placeholder="客户回答 / 记录..."></div>
-      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-6"><div class="txt"><span class="num">6.</span>有销售与市场团队吗？sales person 月目标多少</div></div><input class="note-field" data-note-id="s6-6" placeholder="客户回答 / 记录..."></div>
-      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-7"><div class="txt"><span class="num">7.</span>2025营收 / 2026营收（on track？）</div></div><input class="note-field" data-note-id="s6-7" placeholder="客户回答 / 记录..."></div>
-      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-8"><div class="txt"><span class="num">8.</span>有多少 SKU</div></div><input class="note-field" data-note-id="s6-8" placeholder="客户回答 / 记录..."></div>
-      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-9"><div class="txt"><span class="num">9.</span>老板知道哪个产品利润率最高，多少百分比</div></div><input class="note-field" data-note-id="s6-9" placeholder="客户回答 / 记录..."></div>
-      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-10"><div class="txt"><span class="num">10.</span>老板的工作范畴</div></div><input class="note-field" data-note-id="s6-10" placeholder="客户回答 / 记录..."></div>
-      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-11"><div class="txt"><span class="num">11.</span>老板比较喜欢哪部分（strength）</div></div><input class="note-field" data-note-id="s6-11" placeholder="客户回答 / 记录..."></div>
-      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-12"><div class="txt"><span class="num">12.</span>老板比较不喜欢哪部分（有能力做，但需花很多精力）</div></div><input class="note-field" data-note-id="s6-12" placeholder="客户回答 / 记录..."></div>
-      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-13"><div class="txt"><span class="num">13.</span>有多少股东</div></div><input class="note-field" data-note-id="s6-13" placeholder="客户回答 / 记录..."></div>
-      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-14"><div class="txt"><span class="num">14.</span>有做 review account 吗（多久一次）</div></div><input class="note-field" data-note-id="s6-14" placeholder="客户回答 / 记录..."></div>
-      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-15"><div class="txt"><span class="num">15.</span>每月固定支出承诺</div></div><input class="note-field" data-note-id="s6-15" placeholder="客户回答 / 记录..."></div>
-      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-16"><div class="txt"><span class="num">16.</span>员工人数</div></div><input class="note-field" data-note-id="s6-16" placeholder="客户回答 / 记录..."></div>
-      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-17"><div class="txt"><span class="num">17.</span>客户参加此次session的目的 / 期望 / Aladin</div></div><input class="note-field" data-note-id="s6-17" placeholder="客户回答 / 记录..."></div>
-      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-18"><div class="txt"><span class="num">18.</span>（第6项在原文件中重复，供参考）</div></div><input class="note-field" data-note-id="s6-18" placeholder="客户回答 / 记录..."></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-1"><div class="txt"><span class="num">1.</span>Business Nature 详细内容<div class="lang-sub">Business Nature in details</div></div></div><textarea class="note-field" data-note-id="s6-1" placeholder="客户回答 / 记录..." rows="2"></textarea></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-2"><div class="txt"><span class="num">2.</span>何时开始创业<div class="lang-sub">When start up business</div></div></div><textarea class="note-field" data-note-id="s6-2" placeholder="客户回答 / 记录..." rows="2"></textarea></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-4"><div class="txt"><span class="num">3.</span>是B2B还是B2C<div class="lang-sub">Is B2B or B2C</div></div></div><textarea class="note-field" data-note-id="s6-4" placeholder="客户回答 / 记录..." rows="2"></textarea></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-8"><div class="txt"><span class="num">4.</span>有多少 SKU<div class="lang-sub">How many SKU</div></div></div><textarea class="note-field" data-note-id="s6-8" placeholder="客户回答 / 记录..." rows="2"></textarea></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-3"><div class="txt"><span class="num">5.</span>哪个服务/产品带来最高利润<div class="lang-sub">Which service/product bring highest profit</div></div></div><textarea class="note-field" data-note-id="s6-3" placeholder="客户回答 / 记录..." rows="2"></textarea></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-9"><div class="txt"><span class="num">6.</span>老板知道哪个产品利润率最高，多少百分比<div class="lang-sub">Boss know which product is highest profit margin, how many percent</div></div></div><textarea class="note-field" data-note-id="s6-9" placeholder="客户回答 / 记录..." rows="2"></textarea></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-5"><div class="txt"><span class="num">7.</span>有多少主要客户（多少新销售/回购销售）<div class="lang-sub">Got how many main clients (how many new sales / repeating sales)</div></div></div><textarea class="note-field" data-note-id="s6-5" placeholder="客户回答 / 记录..." rows="2"></textarea></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-6"><div class="txt"><span class="num">8.</span>有销售与市场团队吗？sales person 月目标多少<div class="lang-sub">Got sales & marketing team? Sales person monthly target how much</div></div></div><textarea class="note-field" data-note-id="s6-6" placeholder="客户回答 / 记录..." rows="2"></textarea></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-7"><div class="txt"><span class="num">9.</span>2025营收 / 2026营收（on track？）<div class="lang-sub">2025 revenue / 2026 revenue (on track?)</div></div></div><textarea class="note-field" data-note-id="s6-7" placeholder="客户回答 / 记录..." rows="2"></textarea></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-16"><div class="txt"><span class="num">10.</span>员工人数<div class="lang-sub">Number of Staff</div></div></div><textarea class="note-field" data-note-id="s6-16" placeholder="客户回答 / 记录..." rows="2"></textarea></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-13"><div class="txt"><span class="num">11.</span>有多少股东<div class="lang-sub">Got how many shareholder</div></div></div><textarea class="note-field" data-note-id="s6-13" placeholder="客户回答 / 记录..." rows="2"></textarea></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-14"><div class="txt"><span class="num">12.</span>有做 review account 吗（多久一次）<div class="lang-sub">Got review account or not (how long)</div></div></div><textarea class="note-field" data-note-id="s6-14" placeholder="客户回答 / 记录..." rows="2"></textarea></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-15"><div class="txt"><span class="num">13.</span>每月固定支出承诺<div class="lang-sub">Monthly Commitment</div></div></div><textarea class="note-field" data-note-id="s6-15" placeholder="客户回答 / 记录..." rows="2"></textarea></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-10"><div class="txt"><span class="num">14.</span>老板的工作范畴<div class="lang-sub">Boss's job scope</div></div></div><textarea class="note-field" data-note-id="s6-10" placeholder="客户回答 / 记录..." rows="2"></textarea></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-11"><div class="txt"><span class="num">15.</span>老板比较喜欢哪部分（strength）<div class="lang-sub">Which part Boss more like (like strength)</div></div></div><textarea class="note-field" data-note-id="s6-11" placeholder="客户回答 / 记录..." rows="2"></textarea></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-12"><div class="txt"><span class="num">16.</span>老板比较不喜欢哪部分（有能力做，但需花很多精力）<div class="lang-sub">Which part Boss more no like (got capable to do, but need spend many energies)</div></div></div><textarea class="note-field" data-note-id="s6-12" placeholder="客户回答 / 记录..." rows="2"></textarea></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-17"><div class="txt"><span class="num">17.</span>客户参加此次session的目的 / 期望 / Aladin<div class="lang-sub">What is the purpose client join this session / client expectation of this session / Aladin</div></div></div><textarea class="note-field" data-note-id="s6-17" placeholder="客户回答 / 记录..." rows="2"></textarea></div>
+      <div class="check-item"><div class="check-row"><input type="checkbox" data-id="s6-18"><div class="txt"><span class="num">18.</span>那老板今天我们 open minded 的可以吗？将我们才能真真的帮到你，看哪里我们可以进步的，好吗？</div></div><textarea class="note-field" data-note-id="s6-18" placeholder="客户回答 / 记录..." rows="2"></textarea></div>
     </div>
   </div>
 
@@ -659,6 +704,33 @@ Proposed Venue：YYC HQ
     tr.remove();
   }
 
+  function parseNum(val){
+    return parseFloat((val||'').toString().replace(/,/g,'')) || 0;
+  }
+
+  function formatNumberInput(el){
+    var raw = el.value.replace(/,/g,'');
+    if(raw === '' || raw === '-' || isNaN(Number(raw))) return;
+    var cursorFromEnd = el.value.length - el.selectionEnd;
+    var parts = raw.split('.');
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    var formatted = parts.join('.');
+    if(formatted === el.value) return;
+    el.value = formatted;
+    var newPos = formatted.length - cursorFromEnd;
+    if(newPos < 0) newPos = 0;
+    if(newPos > formatted.length) newPos = formatted.length;
+    el.setSelectionRange(newPos, newPos);
+  }
+
+  function attachNumberFormatting(){
+    document.addEventListener('input', function(e){
+      if(e.target.classList && (e.target.classList.contains('num-input') || e.target.classList.contains('rev-input'))){
+        formatNumberInput(e.target);
+      }
+    });
+  }
+
   function addRevRow(){
     var table = document.getElementById('revTable');
     var row = table.insertRow(-1);
@@ -671,32 +743,52 @@ Proposed Venue：YYC HQ
     row.insertCell(6).innerHTML = rowActionsHTML();
   }
 
-  function addSimpleRow(tableId, numCols, placeholders, col0Placeholder){
+  function addSimpleRow(tableId, numCols, placeholders, col0Placeholder, numericFlags){
     var table = document.getElementById(tableId);
     var row = table.insertRow(-1);
     row.insertCell(0).innerHTML = '<input class="field year-input" placeholder="'+(col0Placeholder||'Year')+'">';
     for(var i=1;i<=numCols;i++){
       var ph = (placeholders && placeholders[i-1]) ? ' placeholder="'+placeholders[i-1]+'"' : '';
-      row.insertCell(i).innerHTML = '<input class="field"'+ph+'>';
+      var numCls = (numericFlags && numericFlags[i-1]) ? ' num-input' : '';
+      row.insertCell(i).innerHTML = '<input class="field'+numCls+'"'+ph+'>';
     }
     row.insertCell(-1).innerHTML = rowActionsHTML();
   }
 
   function addAttendRow(){
-    addSimpleRow('attendTable', 3, [null, null, 'Yes / No'], 'Name');
+    var table = document.getElementById('attendTable');
+    var row = table.insertRow(-1);
+    row.insertCell(0).innerHTML = '<input class="field" placeholder="Name">';
+    row.insertCell(1).innerHTML = '<input class="field">';
+    row.insertCell(2).innerHTML = '<input class="field num-input" data-k="di">';
+    row.insertCell(3).innerHTML = '<input class="field num-input" data-k="sc">';
+    var pctCell = row.insertCell(4); pctCell.className = 'sharepct'; pctCell.textContent = '–';
+    row.insertCell(5).innerHTML = '<input class="field" placeholder="Yes / No">';
+    row.insertCell(6).innerHTML = rowActionsHTML();
   }
 
   function attachMarginCalc(){
     document.addEventListener('input', function(e){
       if(!e.target.classList || !e.target.classList.contains('rev-input')) return;
       var tr = e.target.closest('tr');
-      var rev = parseFloat((tr.querySelector('[data-k="rev"]')||{}).value) || 0;
-      var gp = parseFloat((tr.querySelector('[data-k="gp"]')||{}).value) || 0;
-      var pat = parseFloat((tr.querySelector('[data-k="pat"]')||{}).value) || 0;
+      var rev = parseNum((tr.querySelector('[data-k="rev"]')||{}).value);
+      var gp = parseNum((tr.querySelector('[data-k="gp"]')||{}).value);
+      var pat = parseNum((tr.querySelector('[data-k="pat"]')||{}).value);
       var gpm = tr.querySelector('.gpm');
       var patm = tr.querySelector('.patm');
       if(gpm) gpm.textContent = rev ? (gp/rev*100).toFixed(1)+'%' : '–';
       if(patm) patm.textContent = rev ? (pat/rev*100).toFixed(1)+'%' : '–';
+    });
+  }
+
+  function attachShareCalc(){
+    document.addEventListener('input', function(e){
+      if(!e.target.dataset || (e.target.dataset.k!=='di' && e.target.dataset.k!=='sc')) return;
+      var tr = e.target.closest('tr');
+      var di = parseNum((tr.querySelector('[data-k="di"]')||{}).value);
+      var sc = parseNum((tr.querySelector('[data-k="sc"]')||{}).value);
+      var pct = tr.querySelector('.sharepct');
+      if(pct) pct.textContent = sc ? (di/sc*100).toFixed(1)+'%' : '–';
     });
   }
 
@@ -721,11 +813,23 @@ Proposed Venue：YYC HQ
     });
   }
 
+  function getItemText(item){
+    var txtEl = item.querySelector('.txt');
+    var subEl = txtEl.querySelector('.lang-sub');
+    var full = txtEl.textContent.trim();
+    if(subEl){
+      var subText = subEl.textContent.trim();
+      var mainText = full.slice(0, full.length - subText.length).trim();
+      return mainText + ' ' + subText;
+    }
+    return full;
+  }
+
   function exportQuestionnaireTxt(){
     var lines = ['WSA 121 访谈问题 & 客户回答记录', '========================================', ''];
     document.querySelectorAll('.checklist[data-section="s6"] .check-item').forEach(function(item){
       var box = item.querySelector('input[type="checkbox"]');
-      var txt = item.querySelector('.txt').textContent.trim();
+      var txt = getItemText(item);
       var note = item.querySelector('.note-field');
       var mark = box && box.checked ? '[已问]' : '[未问]';
       lines.push(mark + ' ' + txt);
@@ -824,7 +928,7 @@ Proposed Venue：YYC HQ
     lines.push('');
     document.querySelectorAll('.checklist[data-section="s6"] .check-item').forEach(function(item){
       var box = item.querySelector('input[type="checkbox"]');
-      var txt = item.querySelector('.txt').textContent.trim();
+      var txt = getItemText(item);
       var note = item.querySelector('.note-field');
       var mark = box && box.checked ? '[已问]' : '[未问]';
       lines.push(mark + ' ' + txt);
@@ -835,9 +939,28 @@ Proposed Venue：YYC HQ
     downloadText(sanitizeFilename(company) + '.txt', lines.join('\n'));
   }
 
+  function printSelectedPages(){
+    var checked = Array.prototype.slice.call(document.querySelectorAll('.print-page-chk:checked')).map(function(c){ return c.value; });
+    if(checked.length === 0){ alert('请至少选择一个页面'); return; }
+    document.body.classList.add('print-multi');
+    checked.forEach(function(id, i){
+      var pane = document.getElementById(id);
+      if(!pane) return;
+      pane.classList.add('print-include');
+      if(i === checked.length - 1) pane.classList.add('print-last');
+    });
+    window.print();
+  }
+  window.addEventListener('afterprint', function(){
+    document.body.classList.remove('print-multi');
+    document.querySelectorAll('.pane.print-include').forEach(function(p){ p.classList.remove('print-include'); p.classList.remove('print-last'); });
+  });
+
   initChecklists();
   initNoteFields();
   attachMarginCalc();
+  attachShareCalc();
+  attachNumberFormatting();
 </script>
 
 </body>
